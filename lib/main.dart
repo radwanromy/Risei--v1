@@ -1,77 +1,95 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'screens/tasks_screen.dart';
 import 'screens/learning_screen.dart';
 import 'screens/wellbeing_screen.dart';
 import 'screens/joke_screen.dart';
+import 'theme_colors.dart';
+import 'main_navigation.dart';
+
+const List<Locale> supportedLocales = [
+  Locale('en', 'US'),
+  Locale('ja', 'JP'),
+  Locale('bn', 'BD'),
+  Locale('es', 'ES'),
+  Locale('fr', 'FR'),
+  Locale('ar', 'EG'),
+  Locale('zh', 'CN'),
+];
+
+const Map<String, String> languageNames = {
+  'en': 'English',
+  'ja': '日本語',
+  'bn': 'বাংলা',
+  'es': 'Español',
+  'fr': 'Français',
+  'ar': 'العربية',
+  'zh': '中文',
+};
 
 void main() => runApp(const RiseiApp());
 
-class RiseiApp extends StatelessWidget {
+class RiseiApp extends StatefulWidget {
   const RiseiApp({Key? key}) : super(key: key);
+
+  @override
+  State<RiseiApp> createState() => _RiseiAppState();
+}
+
+class _RiseiAppState extends State<RiseiApp> {
+  ThemeMode _themeMode = ThemeMode.dark;
+  MaterialColor _primarySwatch = Colors.indigo;
+  Locale _locale = supportedLocales[0];
+
+  void setThemeMode(ThemeMode mode) {
+    setState(() {
+      _themeMode = mode;
+    });
+  }
+
+  void setPrimarySwatch(MaterialColor swatch) {
+    setState(() {
+      _primarySwatch = swatch;
+    });
+  }
+
+  void setLocale(Locale locale) {
+    setState(() {
+      _locale = locale;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Risei',
+      locale: _locale,
+      supportedLocales: supportedLocales,
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
       theme: ThemeData(
-        brightness: Brightness.dark,
-        scaffoldBackgroundColor: Colors.black,
-        primarySwatch: Colors.indigo,
+        brightness: Brightness.light,
+        scaffoldBackgroundColor: Colors.white,
+        primarySwatch: _primarySwatch,
         fontFamily: 'Nunito',
       ),
-      home: const MainNavigation(),
-    );
-  }
-}
-
-class MainNavigation extends StatefulWidget {
-  const MainNavigation({Key? key}) : super(key: key);
-
-  @override
-  State<MainNavigation> createState() => _MainNavigationState();
-}
-
-class _MainNavigationState extends State<MainNavigation> {
-  int _currentIndex = 0;
-
-  final List<Widget> _screens = const [
-    TasksScreen(),
-    LearningScreen(),
-    WellbeingScreen(),
-    JokeScreen(),
-  ];
-
-  final List<String> _titles = [
-    'Tasks',
-    'Learning',
-    'Well-being',
-    'Jokes',
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(_titles[_currentIndex]),
-        backgroundColor: Colors.black87,
+      darkTheme: ThemeData(
+        brightness: Brightness.dark,
+        scaffoldBackgroundColor: Colors.transparent,
+        primarySwatch: _primarySwatch,
+        fontFamily: 'Nunito',
       ),
-      body: _screens[_currentIndex],
-      bottomNavigationBar: BottomNavigationBar(
-        backgroundColor: Colors.black,
-        selectedItemColor: Colors.indigo,
-        unselectedItemColor: Colors.white70,
-        currentIndex: _currentIndex,
-        onTap: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
-        },
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.task), label: 'Tasks'),
-          BottomNavigationBarItem(icon: Icon(Icons.school), label: 'Learning'),
-          BottomNavigationBarItem(icon: Icon(Icons.self_improvement), label: 'Well-being'),
-          BottomNavigationBarItem(icon: Icon(Icons.emoji_emotions), label: 'Jokes'),
-        ],
+      themeMode: _themeMode,
+      home: MainNavigation(
+        themeMode: _themeMode,
+        onThemeModeChanged: setThemeMode,
+        primarySwatch: _primarySwatch,
+        onSwatchChanged: setPrimarySwatch,
+        locale: _locale,
+        onLocaleChanged: setLocale,
       ),
     );
   }

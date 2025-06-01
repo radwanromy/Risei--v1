@@ -1,6 +1,8 @@
 PODS:
   - flutter_local_notifications (0.0.1):
     - FlutterMacOS
+  - flutter_tts (0.0.1):
+    - FlutterMacOS
   - FlutterMacOS (1.0.0)
   - open_file_mac (0.0.1):
     - FlutterMacOS
@@ -13,6 +15,7 @@ PODS:
 
 DEPENDENCIES:
   - flutter_local_notifications (from `Flutter/ephemeral/.symlinks/plugins/flutter_local_notifications/macos`)
+  - flutter_tts (from `Flutter/ephemeral/.symlinks/plugins/flutter_tts/macos`)
   - FlutterMacOS (from `Flutter/ephemeral`)
   - open_file_mac (from `Flutter/ephemeral/.symlinks/plugins/open_file_mac/macos`)
   - shared_preferences_foundation (from `Flutter/ephemeral/.symlinks/plugins/shared_preferences_foundation/darwin`)
@@ -21,6 +24,8 @@ DEPENDENCIES:
 EXTERNAL SOURCES:
   flutter_local_notifications:
     :path: Flutter/ephemeral/.symlinks/plugins/flutter_local_notifications/macos
+  flutter_tts:
+    :path: Flutter/ephemeral/.symlinks/plugins/flutter_tts/macos
   FlutterMacOS:
     :path: Flutter/ephemeral
   open_file_mac:
@@ -32,11 +37,12 @@ EXTERNAL SOURCES:
 
 SPEC CHECKSUMS:
   flutter_local_notifications: 7e5a17a1dbc00d83dc10d43c2c4c05f2ceed233c
+  flutter_tts: ae915565cc6948444b513acc8ee021993281e027
   FlutterMacOS: 8f6f14fa908a6fb3fba0cd85dbd81ec4b251fb24
   open_file_mac: 01874b6d6a2c1485ac9b126d7105b99102dea2cf
   shared_preferences_foundation: 9e1978ff2562383bd5676f64ec4e9aa8fa06a6f7
   video_player_avfoundation: 2cef49524dd1f16c5300b9cd6efd9611ce03639b
 
-PODFILE CHECKSUM: 7eb978b976557c8c1cd717d8185ec483fd090a82
+PODFILE CHECKSUM: 9aeb55181f8b8c4afeba0d3a8e8bfcaca2f9729d
 
 COCOAPODS: 1.16.2
