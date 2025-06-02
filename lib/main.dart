@@ -5,6 +5,7 @@ import 'screens/tasks_screen.dart';
 import 'screens/learning_screen.dart';
 import 'screens/wellbeing_screen.dart';
 import 'screens/joke_screen.dart';
+import 'screens/sleep_sounds_screen.dart';
 import 'main_navigation.dart';
 
 // Only import and use themes from theme_colors.dart!

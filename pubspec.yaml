@@ -41,8 +41,10 @@ dependencies:
   video_player: ^2.8.3
   flutter_tts: ^3.8.5
   cupertino_icons: ^1.0.8
+  audioplayers: ^5.2.1
   flutter_localizations:
     sdk: flutter
+
 
 dev_dependencies:
   flutter_test:
@@ -60,7 +62,8 @@ dev_dependencies:
 
 # The following section is specific to Flutter packages.
 flutter:
-
+  assets:
+    - assets/sounds/
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in
   # the material Icons class.

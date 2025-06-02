@@ -16,6 +16,7 @@ import 'learning_screen.dart';
 import 'wellbeing_screen.dart';
 import 'joke_screen.dart';
 import '../theme_colors.dart';
+import 'sleep_sounds_screen.dart';
 
 // Add supported languages and display names for the language picker.
 const List<Locale> supportedLocales = [
@@ -219,6 +220,15 @@ const Map<String, Map<String, String>> localizedStrings = {
     'fr': 'Menu',
     'ar': 'القائمة',
     'zh': '菜单',
+  },
+  'sleep_sounds': {
+  'en': 'Sleep Sounds',
+  'ja': '睡眠サウンド',
+  'bn': 'ঘুমের সাউন্ড',
+  'es': 'Sonidos para dormir',
+  'fr': 'Sons de sommeil',
+  'ar': 'أصوات النوم',
+  'zh': '助眠音效',
   },
 };
 
@@ -1071,6 +1081,16 @@ class _TasksScreenState extends State<TasksScreen> {
                   _navigateTo(context, const JokeScreen());
                 },
               ),
+              ListTile(
+          leading: Icon(Icons.music_note, color: widget.riseiTheme.accentPurple),
+          title: Text(tr('sleep_sounds', loc), style: TextStyle(color: widget.riseiTheme.textWhite)),
+          onTap: () {
+            _navigateTo(context, SleepSoundsScreen(
+  riseiTheme: widget.riseiTheme,
+  locale: widget.locale ?? const Locale('en'), // fallback to English if null
+));
+          },
+        ),
             ],
           ),
         ),

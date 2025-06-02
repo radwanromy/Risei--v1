@@ -4,6 +4,7 @@ import 'screens/learning_screen.dart';
 import 'screens/wellbeing_screen.dart';
 import 'screens/joke_screen.dart';
 import 'screens/tasks_screen.dart';
+import 'screens/sleep_sounds_screen.dart'; // <-- ADD THIS
 
 const List<Locale> supportedLocales = [
   Locale('en', 'US'),
@@ -73,6 +74,7 @@ class _MainNavigationState extends State<MainNavigation> {
       const LearningScreen(),
       const WellbeingScreen(),
       const JokeScreen(),
+      SleepSoundsScreen(riseiTheme: widget.riseiTheme, locale: widget.locale), // <-- ADD THIS
     ];
   }
 
@@ -81,6 +83,7 @@ class _MainNavigationState extends State<MainNavigation> {
     'Learning',
     'Well-being',
     'Jokes',
+    'Sleep Sounds', // <-- ADD THIS
   ];
 
   @override
@@ -95,6 +98,7 @@ class _MainNavigationState extends State<MainNavigation> {
       onLocaleChanged: widget.onLocaleChanged,
       riseiTheme: widget.riseiTheme,
     );
+    _screens[4] = SleepSoundsScreen(riseiTheme: widget.riseiTheme, locale: widget.locale);
   }
 
   @override
@@ -190,36 +194,36 @@ class _MainNavigationState extends State<MainNavigation> {
               ],
             ),
             PopupMenuButton<RiseiTheme>(
-  icon: Icon(Icons.palette, color: theme.accentYellow),
-  tooltip: "Change App Theme",
-  onSelected: widget.onThemeChanged,
-  itemBuilder: (context) => [
-    PopupMenuItem(
-      value: purpleCyanTheme,
-      child: const Text('Purple Cyan'),
-    ),
-    PopupMenuItem(
-      value: orangePinkTheme,
-      child: const Text('Orange Pink'),
-    ),
-    PopupMenuItem(
-      value: blueGreenTheme,
-      child: const Text('Blue Green'),
-    ),
-    PopupMenuItem(
-      value: redAmberTheme,
-      child: const Text('Red Amber'),
-    ),
-    PopupMenuItem(
-      value: solidBlackTheme,
-      child: const Text('Solid Black'),
-    ),
-    PopupMenuItem(
-      value: solidWhiteTheme,
-      child: const Text('Solid White'),
-    ),
-  ],
-),
+              icon: Icon(Icons.palette, color: theme.accentYellow),
+              tooltip: "Change App Theme",
+              onSelected: widget.onThemeChanged,
+              itemBuilder: (context) => [
+                PopupMenuItem(
+                  value: purpleCyanTheme,
+                  child: const Text('Purple Cyan'),
+                ),
+                PopupMenuItem(
+                  value: orangePinkTheme,
+                  child: const Text('Orange Pink'),
+                ),
+                PopupMenuItem(
+                  value: blueGreenTheme,
+                  child: const Text('Blue Green'),
+                ),
+                PopupMenuItem(
+                  value: redAmberTheme,
+                  child: const Text('Red Amber'),
+                ),
+                PopupMenuItem(
+                  value: solidBlackTheme,
+                  child: const Text('Solid Black'),
+                ),
+                PopupMenuItem(
+                  value: solidWhiteTheme,
+                  child: const Text('Solid White'),
+                ),
+              ],
+            ),
             PopupMenuButton<Locale>(
               icon: Icon(Icons.language, color: theme.accentYellow),
               tooltip: "Change Language",
@@ -255,6 +259,7 @@ class _MainNavigationState extends State<MainNavigation> {
             BottomNavigationBarItem(icon: Icon(Icons.school), label: 'Learning'),
             BottomNavigationBarItem(icon: Icon(Icons.self_improvement), label: 'Well-being'),
             BottomNavigationBarItem(icon: Icon(Icons.emoji_emotions), label: 'Jokes'),
+            BottomNavigationBarItem(icon: Icon(Icons.music_note), label: 'Sleep Sounds'), // <-- ADD THIS
           ],
           type: BottomNavigationBarType.fixed,
         ),
