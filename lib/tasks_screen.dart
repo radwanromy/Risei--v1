@@ -15,6 +15,8 @@ import 'package:flutter_tts/flutter_tts.dart'; // <-- ADD THIS LINE
 import 'learning_screen.dart';
 import 'wellbeing_screen.dart';
 import 'joke_screen.dart';
+import '../theme_colors.dart'; //
+
 
 // ... [localizedStrings, localizedQuotes, tr, getQuotesForLocale, Task class, etc. remain unchanged] ...
 
@@ -26,6 +28,9 @@ class TasksScreen extends StatefulWidget {
   final Locale? locale;
   final void Function(Locale)? onLocaleChanged;
 
+  // ADD THIS LINE:
+  final RiseiTheme riseiTheme;
+    required this.riseiTheme,
   const TasksScreen({
     Key? key,
     this.themeMode,
@@ -34,11 +39,13 @@ class TasksScreen extends StatefulWidget {
     this.onSwatchChanged,
     this.locale,
     this.onLocaleChanged,
+    required this.riseiTheme, // <-- ADD THIS
   }) : super(key: key);
 
   @override
   State<TasksScreen> createState() => _TasksScreenState();
 }
+
 
 class _TasksScreenState extends State<TasksScreen> {
   List<Task> tasks = [];
@@ -47,7 +54,12 @@ class _TasksScreenState extends State<TasksScreen> {
   int _currentQuoteIndex = 0;
   Timer? _quoteTimer;
 
-  final List<Color> colorOptions = [Colors.red, Colors.orange, Colors.green, Colors.blue];
+  final List<Color> colorOptions = [
+  widget.riseiTheme.accentCyan,
+  widget.riseiTheme.accentYellow,
+  widget.riseiTheme.accentBlue,
+  kAccentPurple,  // Example of another defined accent color
+];
 
   final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
       FlutterLocalNotificationsPlugin();
@@ -303,10 +315,10 @@ class _TasksScreenState extends State<TasksScreen> {
                             });
                           },
                           child: Container(
-                            decoration: const BoxDecoration(
-                              color: Colors.black54,
-                              shape: BoxShape.circle,
-                            ),
+  decoration: BoxDecoration(
+    gradient: widget.riseiTheme.backgroundGradient, // Use the theme's gradient
+  ),
+)
                             child: const Icon(Icons.close, color: Colors.white, size: 18),
                           ),
                         ),
@@ -376,12 +388,10 @@ class _TasksScreenState extends State<TasksScreen> {
                               child: GestureDetector(
                                 onTap: () => setStateDialog(() => selectedColor = color),
                                 child: CircleAvatar(
-                                  backgroundColor: color,
-                                  radius: 13,
-                                  child: selectedColor == color
-                                      ? const Icon(Icons.check, color: Colors.white, size: 16)
-                                      : null,
-                                ),
+  backgroundColor: task.priorityColor, // Ensure priority colors are passed from theme
+  radius: 18,
+  child: isComplete ? Icon(Icons.check, color: widget.riseiTheme.textWhite) : null,
+),
                               ),
                             )),
                       ],
@@ -520,13 +530,9 @@ class _TasksScreenState extends State<TasksScreen> {
     final double progress = total == 0 ? 0 : done / total;
 
     return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Color(0xFF341f97), Color(0xFF0ed2f7), Color(0xFF1fa2ff)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-      ),
+  decoration: BoxDecoration(
+    gradient: widget.riseiTheme.backgroundGradient, // Use the theme's gradient
+  ),
       child: Scaffold(
         backgroundColor: Colors.transparent,
         appBar: AppBar(

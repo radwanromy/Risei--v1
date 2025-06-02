@@ -11,11 +11,11 @@ import 'package:open_file/open_file.dart';
 import 'package:video_player/video_player.dart';
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
-import 'package:flutter_tts/flutter_tts.dart'; // <-- ADD THIS LINE
+import 'package:flutter_tts/flutter_tts.dart';
 import 'learning_screen.dart';
 import 'wellbeing_screen.dart';
 import 'joke_screen.dart';
-import 'theme_colors.dart';
+import '../theme_colors.dart';
 
 // Add supported languages and display names for the language picker.
 const List<Locale> supportedLocales = [
@@ -222,7 +222,6 @@ const Map<String, Map<String, String>> localizedStrings = {
   },
 };
 
-// Add translations for motivational quotes.
 const Map<String, List<String>> localizedQuotes = {
   'en': [
     "Indeed, Allah loves those who rely upon Him. — Quran (3:159)",
@@ -309,6 +308,7 @@ const Map<String, List<String>> localizedQuotes = {
     "没有计划的目标只是一个愿望。— 圣埃克苏佩里"
   ],
 };
+
 String tr(String key, Locale? locale) {
   final lang = (locale?.languageCode ?? 'en');
   return localizedStrings[key]?[lang] ?? localizedStrings[key]?['en'] ?? key;
@@ -316,7 +316,7 @@ String tr(String key, Locale? locale) {
 
 List<String> getQuotesForLocale(Locale? locale) {
   final lang = (locale?.languageCode ?? 'en');
-  return localizedQuotes[lang] ?? localizedQuotes['en']!;
+  return localizedQuotes[lang] ?? localizedQuotes['en'] ?? <String>[];
 }
 
 class Task {
@@ -370,6 +370,7 @@ class TasksScreen extends StatefulWidget {
   final void Function(MaterialColor)? onSwatchChanged;
   final Locale? locale;
   final void Function(Locale)? onLocaleChanged;
+  final RiseiTheme riseiTheme;
 
   const TasksScreen({
     Key? key,
@@ -379,6 +380,7 @@ class TasksScreen extends StatefulWidget {
     this.onSwatchChanged,
     this.locale,
     this.onLocaleChanged,
+    required this.riseiTheme,
   }) : super(key: key);
 
   @override
@@ -392,7 +394,12 @@ class _TasksScreenState extends State<TasksScreen> {
   int _currentQuoteIndex = 0;
   Timer? _quoteTimer;
 
-  final List<Color> colorOptions = [Color(0xFFC6426E), Color(0xFF17EAD9), kAccentYellow, kAccentBlue];
+  List<Color> get colorOptions => [
+        const Color(0xFFC6426E),
+        const Color(0xFF17EAD9),
+        widget.riseiTheme.accentYellow,
+        widget.riseiTheme.accentBlue,
+      ];
 
   final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
       FlutterLocalNotificationsPlugin();
@@ -411,8 +418,40 @@ class _TasksScreenState extends State<TasksScreen> {
     _startQuoteRotation();
   }
 
+  /// UPDATED: TTS initialization with robust Bangla support/fallback!
   Future<void> _initTTS() async {
-    await flutterTts.setLanguage(widget.locale?.languageCode ?? 'en');
+    String lang = widget.locale?.languageCode ?? 'en';
+    String? setLang = lang;
+    if (lang == 'bn') {
+      List<dynamic> langs = await flutterTts.getLanguages;
+      // Prefer bn-BD, then bn-IN, then bn if available
+      if (langs.contains('bn-BD')) setLang = 'bn-BD';
+      else if (langs.contains('bn-IN')) setLang = 'bn-IN';
+      else if (langs.contains('bn')) setLang = 'bn';
+      else {
+        setLang = 'en';
+        if (mounted) {
+          // Optional: Show this warning in your UI
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("Bangla TTS not supported on this device. Using English instead."))
+          );
+        }
+      }
+
+      // Try to set a Bangla voice if available (not all platforms support setVoice)
+      try {
+        List<dynamic> voices = await flutterTts.getVoices;
+        final bnVoice = voices.cast<Map>().firstWhere(
+          (v) =>
+            (v['locale'] == 'bn-BD' || v['locale'] == 'bn-IN' || v['locale'] == 'bn'),
+          orElse: () => {}
+        );
+        if (bnVoice.isNotEmpty) {
+          await flutterTts.setVoice(Map<String, String>.from(bnVoice));
+        }
+      } catch (_) {}
+    }
+    await flutterTts.setLanguage(setLang!);
     await flutterTts.setSpeechRate(0.45);
     await flutterTts.setVolume(1.0);
     await flutterTts.setPitch(1.0);
@@ -439,11 +478,16 @@ class _TasksScreenState extends State<TasksScreen> {
   }
 
   void _speakQuote() {
-    _speak(quotes[_currentQuoteIndex]);
+    if (quotes.isNotEmpty) {
+      _speak(quotes[_currentQuoteIndex]);
+    }
   }
 
   void _initQuotes() {
     quotes = getQuotesForLocale(widget.locale);
+    if (quotes.isEmpty) {
+      quotes = ["Welcome to Risei!"];
+    }
   }
 
   @override
@@ -452,6 +496,9 @@ class _TasksScreenState extends State<TasksScreen> {
     if (widget.locale?.languageCode != oldWidget.locale?.languageCode) {
       setState(() {
         quotes = getQuotesForLocale(widget.locale);
+        if (quotes.isEmpty) {
+          quotes = ["Welcome to Risei!"];
+        }
         _currentQuoteIndex = 0;
       });
       _initTTS();
@@ -490,7 +537,11 @@ class _TasksScreenState extends State<TasksScreen> {
   void _startQuoteRotation() {
     _quoteTimer = Timer.periodic(const Duration(seconds: 10), (_) {
       setState(() {
-        _currentQuoteIndex = (_currentQuoteIndex + 1) % quotes.length;
+        if (quotes.isNotEmpty) {
+          _currentQuoteIndex = (_currentQuoteIndex + 1) % quotes.length;
+        } else {
+          _currentQuoteIndex = 0;
+        }
       });
     });
   }
@@ -546,7 +597,7 @@ class _TasksScreenState extends State<TasksScreen> {
     );
   }
 
-    void _showTaskDialog({Task? task, int? editIndex}) async {
+  void _showTaskDialog({Task? task, int? editIndex}) async {
     final nameController = TextEditingController(text: task?.name ?? "");
     final descriptionController = TextEditingController(text: task?.description ?? "");
     DateTime? selectedDate = task?.dueDate;
@@ -575,6 +626,7 @@ class _TasksScreenState extends State<TasksScreen> {
                 });
               }
             }
+
             Future<void> pickReminderDateTime() async {
               final now = DateTime.now();
               final date = await showDatePicker(
@@ -597,6 +649,7 @@ class _TasksScreenState extends State<TasksScreen> {
                 }
               }
             }
+
             Widget attachmentPreview() {
               if (attachments.isEmpty) return Container();
               return Wrap(
@@ -614,7 +667,7 @@ class _TasksScreenState extends State<TasksScreen> {
                         height: 48,
                         fit: BoxFit.cover,
                         errorBuilder: (context, error, stackTrace) =>
-                            const Icon(Icons.broken_image, size: 48),
+                            Icon(Icons.broken_image, size: 48),
                       ),
                     );
                   } else if (['mp4', 'mov', 'avi', 'wmv', 'webm'].contains(ext)) {
@@ -623,14 +676,14 @@ class _TasksScreenState extends State<TasksScreen> {
                       child: Container(
                         width: 48,
                         height: 48,
-                        color: kAccentBlue.withOpacity(0.15),
-                        child: const Icon(Icons.videocam, size: 32, color: Colors.deepOrange),
+                        color: widget.riseiTheme.accentBlue.withOpacity(0.15),
+                        child: Icon(Icons.videocam, size: 32, color: Colors.deepOrange),
                       ),
                     );
                   } else {
                     icon = GestureDetector(
                       onTap: () => _openAttachment(context, path),
-                      child: const Icon(Icons.description, size: 48, color: kAccentBlue),
+                      child: Icon(Icons.description, size: 48, color: widget.riseiTheme.accentBlue),
                     );
                   }
                   return Stack(
@@ -648,10 +701,10 @@ class _TasksScreenState extends State<TasksScreen> {
                           },
                           child: Container(
                             decoration: BoxDecoration(
-                              color: kGradientStart.withOpacity(0.7),
+                              color: widget.riseiTheme.backgroundGradient.colors.first.withOpacity(0.7),
                               shape: BoxShape.circle,
                             ),
-                            child: const Icon(Icons.close, color: Colors.white, size: 18),
+                            child: Icon(Icons.close, color: Colors.white, size: 18),
                           ),
                         ),
                       )
@@ -662,12 +715,12 @@ class _TasksScreenState extends State<TasksScreen> {
             }
 
             return AlertDialog(
-              backgroundColor: kGradientStart.withOpacity(0.92),
-              titleTextStyle: const TextStyle(
-                fontWeight: FontWeight.bold, color: kTextWhite, fontSize: 20
+              backgroundColor: widget.riseiTheme.backgroundGradient.colors[0].withOpacity(0.92),
+              titleTextStyle: TextStyle(
+                fontWeight: FontWeight.bold, color: widget.riseiTheme.textWhite, fontSize: 20
               ),
-              contentTextStyle: const TextStyle(
-                color: kTextWhite
+              contentTextStyle: TextStyle(
+                color: widget.riseiTheme.textWhite
               ),
               title: Text(editIndex == null
                   ? tr('add_task', widget.locale)
@@ -679,15 +732,15 @@ class _TasksScreenState extends State<TasksScreen> {
                   children: [
                     TextField(
                       controller: nameController,
-                      style: const TextStyle(color: kAccentCyan),
+                      style: TextStyle(color: widget.riseiTheme.accentCyan),
                       decoration: InputDecoration(
                         labelText: tr('task_name', widget.locale),
-                        labelStyle: const TextStyle(color: kAccentCyan),
+                        labelStyle: TextStyle(color: widget.riseiTheme.accentCyan),
                         enabledBorder: UnderlineInputBorder(
-                          borderSide: BorderSide(color: kAccentCyan),
+                          borderSide: BorderSide(color: widget.riseiTheme.accentCyan),
                         ),
                         focusedBorder: UnderlineInputBorder(
-                          borderSide: BorderSide(color: kAccentYellow),
+                          borderSide: BorderSide(color: widget.riseiTheme.accentYellow),
                         ),
                       ),
                     ),
@@ -695,32 +748,32 @@ class _TasksScreenState extends State<TasksScreen> {
                     TextField(
                       controller: descriptionController,
                       maxLines: 2,
-                      style: const TextStyle(color: kTextWhite),
+                      style: TextStyle(color: widget.riseiTheme.textWhite),
                       decoration: InputDecoration(
                         labelText: tr('description', widget.locale),
-                        labelStyle: const TextStyle(color: kTextWhite),
+                        labelStyle: TextStyle(color: widget.riseiTheme.textWhite),
                         enabledBorder: UnderlineInputBorder(
-                          borderSide: BorderSide(color: kAccentBlue),
+                          borderSide: BorderSide(color: widget.riseiTheme.accentBlue),
                         ),
                         focusedBorder: UnderlineInputBorder(
-                          borderSide: BorderSide(color: kAccentYellow),
+                          borderSide: BorderSide(color: widget.riseiTheme.accentYellow),
                         ),
                       ),
                     ),
                     const SizedBox(height: 12),
                     Row(
                       children: [
-                        Text(tr('due_date', widget.locale) + ':', style: const TextStyle(color: kAccentYellow)),
+                        Text(tr('due_date', widget.locale) + ':', style: TextStyle(color: widget.riseiTheme.accentYellow)),
                         const SizedBox(width: 8),
                         Text(
                           selectedDate != null
                               ? DateFormat('yyyy-MM-dd').format(selectedDate!)
                               : tr('not_selected', widget.locale),
-                          style: const TextStyle(fontWeight: FontWeight.bold, color: kTextWhite),
+                          style: TextStyle(fontWeight: FontWeight.bold, color: widget.riseiTheme.textWhite),
                         ),
                         const SizedBox(width: 8),
                         IconButton(
-                          icon: Icon(Icons.calendar_today, color: kAccentYellow),
+                          icon: Icon(Icons.calendar_today, color: widget.riseiTheme.accentYellow),
                           onPressed: () async {
                             final now = DateTime.now();
                             final picked = await showDatePicker(
@@ -741,7 +794,7 @@ class _TasksScreenState extends State<TasksScreen> {
                     const SizedBox(height: 12),
                     Row(
                       children: [
-                        Text("${tr('priority', widget.locale)}: ", style: const TextStyle(color: kAccentYellow)),
+                        Text("${tr('priority', widget.locale)}: ", style: TextStyle(color: widget.riseiTheme.accentYellow)),
                         ...colorOptions.map((color) => Padding(
                               padding: const EdgeInsets.symmetric(horizontal: 4.0),
                               child: GestureDetector(
@@ -750,7 +803,7 @@ class _TasksScreenState extends State<TasksScreen> {
                                   backgroundColor: color,
                                   radius: 13,
                                   child: selectedColor == color
-                                      ? const Icon(Icons.check, color: Colors.white, size: 16)
+                                      ? Icon(Icons.check, color: Colors.white, size: 16)
                                       : null,
                                 ),
                               ),
@@ -761,17 +814,17 @@ class _TasksScreenState extends State<TasksScreen> {
                     Row(
                       children: [
                         ElevatedButton.icon(
-                          icon: const Icon(Icons.attach_file),
+                          icon: Icon(Icons.attach_file),
                           label: Text(tr('add_attachment', widget.locale)),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: kAccentCyan,
+                            backgroundColor: widget.riseiTheme.accentCyan,
                             foregroundColor: Colors.black87,
                           ),
                           onPressed: pickFiles,
                         ),
                         const SizedBox(width: 10),
                         if (attachments.isNotEmpty)
-                          Text("${attachments.length} ${tr('file', widget.locale)}", style: const TextStyle(fontSize: 13, color: kAccentCyan)),
+                          Text("${attachments.length} ${tr('file', widget.locale)}", style: TextStyle(fontSize: 13, color: widget.riseiTheme.accentCyan)),
                       ],
                     ),
                     const SizedBox(height: 10),
@@ -780,10 +833,10 @@ class _TasksScreenState extends State<TasksScreen> {
                     Row(
                       children: [
                         ElevatedButton.icon(
-                          icon: const Icon(Icons.alarm),
+                          icon: Icon(Icons.alarm),
                           label: Text(tr('set_reminder', widget.locale)),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: kAccentYellow,
+                            backgroundColor: widget.riseiTheme.accentYellow,
                             foregroundColor: Colors.black87,
                           ),
                           onPressed: pickReminderDateTime,
@@ -792,7 +845,7 @@ class _TasksScreenState extends State<TasksScreen> {
                         if (reminderTime != null)
                           Text(
                             DateFormat('yyyy-MM-dd HH:mm').format(reminderTime!),
-                            style: const TextStyle(fontSize: 13, color: kAccentYellow),
+                            style: TextStyle(fontSize: 13, color: widget.riseiTheme.accentYellow),
                           ),
                       ],
                     ),
@@ -802,11 +855,11 @@ class _TasksScreenState extends State<TasksScreen> {
               actions: [
                 TextButton(
                   onPressed: () => Navigator.of(context).pop(),
-                  child: Text(tr('cancel', widget.locale), style: const TextStyle(color: kAccentYellow)),
+                  child: Text(tr('cancel', widget.locale), style: TextStyle(color: widget.riseiTheme.accentYellow)),
                 ),
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: kAccentBlue,
+                    backgroundColor: widget.riseiTheme.accentBlue,
                     foregroundColor: Colors.white,
                   ),
                   onPressed: () async {
@@ -881,11 +934,11 @@ class _TasksScreenState extends State<TasksScreen> {
     final ext = path.split('.').last.toLowerCase();
     if (['jpg', 'jpeg', 'png', 'gif'].contains(ext)) {
       Navigator.of(context).push(MaterialPageRoute(
-        builder: (_) => ImagePreviewScreen(imagePath: path),
+        builder: (_) => ImagePreviewScreen(imagePath: path, riseiTheme: widget.riseiTheme),
       ));
     } else if (['mp4', 'mov', 'avi', 'wmv', 'webm'].contains(ext)) {
       Navigator.of(context).push(MaterialPageRoute(
-        builder: (_) => VideoPreviewScreen(videoPath: path),
+        builder: (_) => VideoPreviewScreen(videoPath: path, riseiTheme: widget.riseiTheme),
       ));
     } else {
       OpenFile.open(path);
@@ -903,8 +956,8 @@ class _TasksScreenState extends State<TasksScreen> {
     final double progress = total == 0 ? 0 : done / total;
 
     return Container(
-      decoration: const BoxDecoration(
-        gradient: kBackgroundGradient,
+      decoration: BoxDecoration(
+        gradient: widget.riseiTheme.backgroundGradient,
       ),
       child: Scaffold(
         backgroundColor: Colors.transparent,
@@ -919,16 +972,18 @@ class _TasksScreenState extends State<TasksScreen> {
                   child: GestureDetector(
                     onTap: _speakQuote,
                     child: Text(
-                      quotes[_currentQuoteIndex],
+                      quotes.isNotEmpty
+                          ? quotes[_currentQuoteIndex]
+                          : "Welcome to Risei!",
                       key: ValueKey(_currentQuoteIndex),
-                      style: const TextStyle(fontSize: 16, color: kAccentCyan),
+                      style: TextStyle(fontSize: 16, color: widget.riseiTheme.accentCyan),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.volume_up, color: kAccentYellow),
+                  icon: Icon(Icons.volume_up, color: widget.riseiTheme.accentYellow),
                   onPressed: _speakQuote,
                   tooltip: "Read aloud quote",
                 ),
@@ -940,7 +995,7 @@ class _TasksScreenState extends State<TasksScreen> {
           elevation: 0,
           actions: [
             PopupMenuButton<Locale>(
-              icon: const Icon(Icons.language, color: kAccentYellow),
+              icon: Icon(Icons.language, color: widget.riseiTheme.accentYellow),
               tooltip: "Change Language",
               onSelected: (locale) => widget.onLocaleChanged?.call(locale),
               itemBuilder: (context) => supportedLocales
@@ -948,7 +1003,7 @@ class _TasksScreenState extends State<TasksScreen> {
                         value: locale,
                         child: Row(
                           children: [
-                            const Icon(Icons.language),
+                            Icon(Icons.language),
                             const SizedBox(width: 8),
                             Text(languageNames[locale.languageCode] ?? locale.languageCode)
                           ],
@@ -962,16 +1017,16 @@ class _TasksScreenState extends State<TasksScreen> {
               child: ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
                   elevation: 6,
-                  backgroundColor: kAccentYellow,
+                  backgroundColor: widget.riseiTheme.accentYellow,
                   foregroundColor: Colors.black,
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(28),
                   ),
-                  shadowColor: kAccentYellow.withOpacity(0.4),
-                  textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  shadowColor: widget.riseiTheme.accentYellow.withOpacity(0.4),
+                  textStyle: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                 ),
-                icon: const Icon(Icons.add_circle_outline, size: 24, color: kAccentBlue),
+                icon: Icon(Icons.add_circle_outline, size: 24, color: widget.riseiTheme.accentBlue),
                 label: Text(tr('add_task', widget.locale)),
                 onPressed: () => _showTaskDialog(),
               ),
@@ -983,33 +1038,33 @@ class _TasksScreenState extends State<TasksScreen> {
             padding: EdgeInsets.zero,
             children: [
               DrawerHeader(
-                decoration: const BoxDecoration(gradient: kBackgroundGradient),
-                child: Text(tr('menu', loc), style: const TextStyle(color: Colors.white, fontSize: 24)),
+                decoration: BoxDecoration(gradient: widget.riseiTheme.backgroundGradient),
+                child: Text(tr('menu', loc), style: TextStyle(color: Colors.white, fontSize: 24)),
               ),
               ListTile(
-                leading: const Icon(Icons.task, color: kAccentBlue),
-                title: Text(tr('tasks', loc), style: const TextStyle(color: kTextWhite)),
+                leading: Icon(Icons.task, color: widget.riseiTheme.accentBlue),
+                title: Text(tr('tasks', loc), style: TextStyle(color: widget.riseiTheme.textWhite)),
                 onTap: () {
                   Navigator.pop(context);
                 },
               ),
               ListTile(
-                leading: const Icon(Icons.school, color: kAccentYellow),
-                title: Text(tr('learning', loc), style: const TextStyle(color: kTextWhite)),
+                leading: Icon(Icons.school, color: widget.riseiTheme.accentYellow),
+                title: Text(tr('learning', loc), style: TextStyle(color: widget.riseiTheme.textWhite)),
                 onTap: () {
                   _navigateTo(context, const LearningScreen());
                 },
               ),
               ListTile(
-                leading: const Icon(Icons.self_improvement, color: kAccentCyan),
-                title: Text(tr('wellbeing', loc), style: const TextStyle(color: kTextWhite)),
+                leading: Icon(Icons.self_improvement, color: widget.riseiTheme.accentCyan),
+                title: Text(tr('wellbeing', loc), style: TextStyle(color: widget.riseiTheme.textWhite)),
                 onTap: () {
                   _navigateTo(context, const WellbeingScreen());
                 },
               ),
               ListTile(
-                leading: const Icon(Icons.emoji_emotions, color: kAccentYellow),
-                title: Text(tr('jokes', loc), style: const TextStyle(color: kTextWhite)),
+                leading: Icon(Icons.emoji_emotions, color: widget.riseiTheme.accentYellow),
+                title: Text(tr('jokes', loc), style: TextStyle(color: widget.riseiTheme.textWhite)),
                 onTap: () {
                   _navigateTo(context, const JokeScreen());
                 },
@@ -1027,20 +1082,20 @@ class _TasksScreenState extends State<TasksScreen> {
                     LinearProgressIndicator(
                       value: progress,
                       minHeight: 10,
-                      backgroundColor: kAccentCyan.withOpacity(0.25),
-                      valueColor: AlwaysStoppedAnimation<Color>(kAccentYellow),
+                      backgroundColor: widget.riseiTheme.accentCyan.withOpacity(0.25),
+                      valueColor: AlwaysStoppedAnimation<Color>(widget.riseiTheme.accentYellow),
                     ),
                     const SizedBox(height: 8),
                     Text(
                       "${(progress * 100).toStringAsFixed(0)}% completed ($done/$total)",
-                      style: const TextStyle(fontWeight: FontWeight.bold, color: kAccentYellow),
+                      style: TextStyle(fontWeight: FontWeight.bold, color: widget.riseiTheme.accentYellow),
                     ),
                   ],
                 ),
               ),
             Expanded(
               child: tasks.isEmpty
-                  ? Center(child: Text(tr('no_tasks', loc), style: const TextStyle(color: kTextWhite)))
+                  ? Center(child: Text(tr('no_tasks', loc), style: TextStyle(color: widget.riseiTheme.textWhite)))
                   : ListView.builder(
                       itemCount: tasks.length,
                       itemBuilder: (context, index) {
@@ -1048,7 +1103,7 @@ class _TasksScreenState extends State<TasksScreen> {
                         final isComplete = completed.length > index ? completed[index] : false;
                         return Card(
                           margin: const EdgeInsets.all(8.0),
-                          color: kGradientStart.withOpacity(0.8),
+                          color: widget.riseiTheme.backgroundGradient.colors[0].withOpacity(0.8),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(20),
                           ),
@@ -1061,7 +1116,7 @@ class _TasksScreenState extends State<TasksScreen> {
                                 backgroundColor: task.priorityColor,
                                 radius: 18,
                                 child: isComplete
-                                    ? const Icon(Icons.check, color: Colors.white)
+                                    ? Icon(Icons.check, color: Colors.white)
                                     : null,
                               ),
                             ),
@@ -1077,13 +1132,13 @@ class _TasksScreenState extends State<TasksScreen> {
                                         decoration: isComplete
                                             ? TextDecoration.lineThrough
                                             : TextDecoration.none,
-                                        color: isComplete ? Colors.grey : kTextWhite,
+                                        color: isComplete ? Colors.grey : widget.riseiTheme.textWhite,
                                       ),
                                     ),
                                   ),
                                 ),
                                 IconButton(
-                                  icon: const Icon(Icons.volume_up, color: kAccentCyan),
+                                  icon: Icon(Icons.volume_up, color: widget.riseiTheme.accentCyan),
                                   onPressed: () => _speakTask(task, index),
                                   tooltip: "Read aloud task",
                                 ),
@@ -1092,16 +1147,16 @@ class _TasksScreenState extends State<TasksScreen> {
                                   children: [
                                     Text(
                                       timeFormat.format(task.addedTime),
-                                      style: const TextStyle(
+                                      style: TextStyle(
                                         fontSize: 12,
-                                        color: kTextFaint,
+                                        color: widget.riseiTheme.textFaint,
                                       ),
                                     ),
                                     Text(
                                       dateFormat.format(task.addedTime),
-                                      style: const TextStyle(
+                                      style: TextStyle(
                                         fontSize: 10,
-                                        color: kTextFaint,
+                                        color: widget.riseiTheme.textFaint,
                                       ),
                                     ),
                                   ],
@@ -1118,21 +1173,21 @@ class _TasksScreenState extends State<TasksScreen> {
                                       decoration: isComplete
                                           ? TextDecoration.lineThrough
                                           : TextDecoration.none,
-                                      color: isComplete ? Colors.grey : kTextWhite,
+                                      color: isComplete ? Colors.grey : widget.riseiTheme.textWhite,
                                     ),
                                   ),
                                   const SizedBox(height: 4),
                                 ],
                                 Text(
                                   "${tr('due_date', loc)}: ${dateFormat.format(task.dueDate)}",
-                                  style: const TextStyle(fontSize: 13, color: kAccentYellow),
+                                  style: TextStyle(fontSize: 13, color: widget.riseiTheme.accentYellow),
                                 ),
                                 if (task.reminderTime != null)
                                   Text(
                                     "${tr('reminder', loc)}: ${DateFormat('yyyy-MM-dd HH:mm').format(task.reminderTime!)}",
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       fontSize: 12,
-                                      color: kAccentCyan,
+                                      color: widget.riseiTheme.accentCyan,
                                     ),
                                   ),
                                 if (task.attachmentPaths.isNotEmpty)
@@ -1153,7 +1208,7 @@ class _TasksScreenState extends State<TasksScreen> {
                                               height: 32,
                                               fit: BoxFit.cover,
                                               errorBuilder: (context, error, stackTrace) =>
-                                                  const Icon(Icons.broken_image, size: 32),
+                                                  Icon(Icons.broken_image, size: 32),
                                             ),
                                           );
                                         } else if (['mp4', 'mov', 'avi', 'wmv', 'webm'].contains(ext)) {
@@ -1162,14 +1217,14 @@ class _TasksScreenState extends State<TasksScreen> {
                                             child: Container(
                                               width: 32,
                                               height: 32,
-                                              color: kAccentBlue.withOpacity(0.15),
-                                              child: const Icon(Icons.videocam, size: 24, color: Colors.deepOrange),
+                                              color: widget.riseiTheme.accentBlue.withOpacity(0.15),
+                                              child: Icon(Icons.videocam, size: 24, color: Colors.deepOrange),
                                             ),
                                           );
                                         } else {
                                           icon = GestureDetector(
                                             onTap: () => _openAttachment(context, path),
-                                            child: const Icon(Icons.description, size: 32, color: kAccentBlue),
+                                            child: Icon(Icons.description, size: 32, color: widget.riseiTheme.accentBlue),
                                           );
                                         }
                                         return icon;
@@ -1184,18 +1239,18 @@ class _TasksScreenState extends State<TasksScreen> {
                                 IconButton(
                                   icon: Icon(
                                     isComplete ? Icons.check_box : Icons.check_box_outline_blank,
-                                    color: isComplete ? kAccentCyan : kAccentYellow,
+                                    color: isComplete ? widget.riseiTheme.accentCyan : widget.riseiTheme.accentYellow,
                                   ),
                                   tooltip: isComplete ? "Mark as incomplete" : "Mark as complete",
                                   onPressed: () => _toggleComplete(index),
                                 ),
                                 IconButton(
-                                  icon: const Icon(Icons.edit, color: kAccentYellow),
+                                  icon: Icon(Icons.edit, color: widget.riseiTheme.accentYellow),
                                   tooltip: tr('edit_task', loc),
                                   onPressed: () => _showTaskDialog(task: task, editIndex: index),
                                 ),
                                 IconButton(
-                                  icon: const Icon(Icons.delete, color: Colors.redAccent),
+                                  icon: Icon(Icons.delete, color: Colors.redAccent),
                                   tooltip: 'Delete',
                                   onPressed: () => _deleteTask(index),
                                 ),
@@ -1213,15 +1268,15 @@ class _TasksScreenState extends State<TasksScreen> {
   }
 }
 
-// Image preview screen
 class ImagePreviewScreen extends StatelessWidget {
   final String imagePath;
-  const ImagePreviewScreen({super.key, required this.imagePath});
+  final RiseiTheme riseiTheme;
+  const ImagePreviewScreen({Key? key, required this.imagePath, required this.riseiTheme}) : super(key: key);
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: kGradientStart,
-      appBar: AppBar(backgroundColor: kGradientMiddle),
+      backgroundColor: riseiTheme.backgroundGradient.colors[0],
+      appBar: AppBar(backgroundColor: riseiTheme.backgroundGradient.colors[1]),
       body: Center(
         child: Image.file(File(imagePath)),
       ),
@@ -1229,32 +1284,36 @@ class ImagePreviewScreen extends StatelessWidget {
   }
 }
 
-// Video preview screen
 class VideoPreviewScreen extends StatefulWidget {
   final String videoPath;
-  const VideoPreviewScreen({super.key, required this.videoPath});
+  final RiseiTheme riseiTheme;
+  const VideoPreviewScreen({Key? key, required this.videoPath, required this.riseiTheme}) : super(key: key);
+
   @override
   State<VideoPreviewScreen> createState() => _VideoPreviewScreenState();
 }
 
 class _VideoPreviewScreenState extends State<VideoPreviewScreen> {
   late VideoPlayerController _controller;
+
   @override
   void initState() {
     super.initState();
     _controller = VideoPlayerController.file(File(widget.videoPath))
       ..initialize().then((_) => setState(() {}));
   }
+
   @override
   void dispose() {
     _controller.dispose();
     super.dispose();
   }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: kGradientStart,
-      appBar: AppBar(backgroundColor: kGradientMiddle),
+      backgroundColor: widget.riseiTheme.backgroundGradient.colors[0],
+      appBar: AppBar(backgroundColor: widget.riseiTheme.backgroundGradient.colors[1]),
       body: Center(
         child: _controller.value.isInitialized
             ? AspectRatio(
@@ -1264,7 +1323,7 @@ class _VideoPreviewScreenState extends State<VideoPreviewScreen> {
             : const CircularProgressIndicator(),
       ),
       floatingActionButton: FloatingActionButton(
-        backgroundColor: kAccentYellow,
+        backgroundColor: Colors.white,
         onPressed: () {
           setState(() {
             _controller.value.isPlaying
@@ -1272,8 +1331,10 @@ class _VideoPreviewScreenState extends State<VideoPreviewScreen> {
                 : _controller.play();
           });
         },
-        child:
-            Icon(_controller.value.isPlaying ? Icons.pause : Icons.play_arrow, color: Colors.black),
+        child: Icon(
+          _controller.value.isPlaying ? Icons.pause : Icons.play_arrow,
+          color: Colors.black,
+        ),
       ),
     );
   }

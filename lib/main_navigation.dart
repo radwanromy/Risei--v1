@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'theme_colors.dart';
-import 'screens/tasks_screen.dart';
 import 'screens/learning_screen.dart';
 import 'screens/wellbeing_screen.dart';
 import 'screens/joke_screen.dart';
+import 'screens/tasks_screen.dart';
 
 const List<Locale> supportedLocales = [
   Locale('en', 'US'),
@@ -33,6 +33,10 @@ class MainNavigation extends StatefulWidget {
   final Locale locale;
   final void Function(Locale) onLocaleChanged;
 
+  /// Advanced theme switching support
+  final RiseiTheme riseiTheme;
+  final void Function(RiseiTheme) onThemeChanged;
+
   const MainNavigation({
     Key? key,
     required this.themeMode,
@@ -41,6 +45,8 @@ class MainNavigation extends StatefulWidget {
     required this.onSwatchChanged,
     required this.locale,
     required this.onLocaleChanged,
+    required this.riseiTheme,
+    required this.onThemeChanged,
   }) : super(key: key);
 
   @override
@@ -49,7 +55,6 @@ class MainNavigation extends StatefulWidget {
 
 class _MainNavigationState extends State<MainNavigation> {
   int _currentIndex = 0;
-
   late List<Widget> _screens;
 
   @override
@@ -63,6 +68,7 @@ class _MainNavigationState extends State<MainNavigation> {
         onSwatchChanged: widget.onSwatchChanged,
         locale: widget.locale,
         onLocaleChanged: widget.onLocaleChanged,
+        riseiTheme: widget.riseiTheme,
       ),
       const LearningScreen(),
       const WellbeingScreen(),
@@ -87,22 +93,25 @@ class _MainNavigationState extends State<MainNavigation> {
       onSwatchChanged: widget.onSwatchChanged,
       locale: widget.locale,
       onLocaleChanged: widget.onLocaleChanged,
+      riseiTheme: widget.riseiTheme,
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = widget.riseiTheme;
+
     return Container(
-      decoration: const BoxDecoration(
-        gradient: kBackgroundGradient,
+      decoration: BoxDecoration(
+        gradient: theme.backgroundGradient,
       ),
       child: Scaffold(
         backgroundColor: Colors.transparent,
         appBar: AppBar(
           title: Text(
             _titles[_currentIndex],
-            style: const TextStyle(
-              color: kTextWhite,
+            style: TextStyle(
+              color: theme.textWhite,
               fontWeight: FontWeight.bold,
               fontSize: 22,
               letterSpacing: 1.2,
@@ -114,16 +123,17 @@ class _MainNavigationState extends State<MainNavigation> {
             IconButton(
               icon: Icon(
                 widget.themeMode == ThemeMode.dark ? Icons.dark_mode : Icons.light_mode,
-                color: kAccentYellow,
+                color: theme.accentYellow,
               ),
               tooltip: "Toggle Theme",
               onPressed: () {
                 widget.onThemeModeChanged(
-                    widget.themeMode == ThemeMode.dark ? ThemeMode.light : ThemeMode.dark);
+                  widget.themeMode == ThemeMode.dark ? ThemeMode.light : ThemeMode.dark,
+                );
               },
             ),
             PopupMenuButton<MaterialColor>(
-              icon: const Icon(Icons.color_lens, color: kAccentCyan),
+              icon: Icon(Icons.color_lens, color: theme.accentCyan),
               tooltip: "Change Primary Color",
               onSelected: (color) => widget.onSwatchChanged(color),
               itemBuilder: (context) => [
@@ -179,8 +189,31 @@ class _MainNavigationState extends State<MainNavigation> {
                 ),
               ],
             ),
+            PopupMenuButton<RiseiTheme>(
+  icon: Icon(Icons.palette, color: theme.accentYellow),
+  tooltip: "Change App Theme",
+  onSelected: widget.onThemeChanged,
+  itemBuilder: (context) => [
+    PopupMenuItem(
+      value: purpleCyanTheme,
+      child: const Text('Purple Cyan'),
+    ),
+    PopupMenuItem(
+      value: orangePinkTheme,
+      child: const Text('Orange Pink'),
+    ),
+    PopupMenuItem(
+      value: blueGreenTheme,
+      child: const Text('Blue Green'),
+    ),
+    PopupMenuItem(
+      value: redAmberTheme,
+      child: const Text('Red Amber'),
+    ),
+  ],
+),
             PopupMenuButton<Locale>(
-              icon: const Icon(Icons.language, color: kAccentYellow),
+              icon: Icon(Icons.language, color: theme.accentYellow),
               tooltip: "Change Language",
               onSelected: (locale) => widget.onLocaleChanged(locale),
               itemBuilder: (context) => supportedLocales
@@ -201,8 +234,8 @@ class _MainNavigationState extends State<MainNavigation> {
         body: _screens[_currentIndex],
         bottomNavigationBar: BottomNavigationBar(
           backgroundColor: Colors.transparent,
-          selectedItemColor: kAccentYellow,
-          unselectedItemColor: kTextFaint,
+          selectedItemColor: theme.accentYellow,
+          unselectedItemColor: theme.textFaint,
           currentIndex: _currentIndex,
           onTap: (index) {
             setState(() {
