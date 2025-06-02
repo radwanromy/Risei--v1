@@ -210,6 +210,14 @@ class _MainNavigationState extends State<MainNavigation> {
       value: redAmberTheme,
       child: const Text('Red Amber'),
     ),
+    PopupMenuItem(
+      value: solidBlackTheme,
+      child: const Text('Solid Black'),
+    ),
+    PopupMenuItem(
+      value: solidWhiteTheme,
+      child: const Text('Solid White'),
+    ),
   ],
 ),
             PopupMenuButton<Locale>(

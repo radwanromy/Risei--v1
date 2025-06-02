@@ -399,6 +399,8 @@ class _TasksScreenState extends State<TasksScreen> {
         const Color(0xFF17EAD9),
         widget.riseiTheme.accentYellow,
         widget.riseiTheme.accentBlue,
+        widget.riseiTheme.solidBlack, // Add solid black
+        widget.riseiTheme.solidWhite, // Add solid white
       ];
 
   final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =

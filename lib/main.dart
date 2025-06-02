@@ -92,6 +92,8 @@ class _RiseiAppState extends State<RiseiApp> {
               accentPurple: _currentTheme.accentPurple,
               textWhite: _currentTheme.textWhite,
               textFaint: _currentTheme.textFaint,
+              solidBlack: _currentTheme.solidBlack,
+              solidWhite: _currentTheme.solidWhite,
             );
           });
         },

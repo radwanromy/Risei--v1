@@ -11,6 +11,8 @@ class RiseiTheme {
   final Color accentPurple;
   final Color textWhite;
   final Color textFaint;
+  final Color solidBlack;
+  final Color solidWhite;
 
   RiseiTheme({
     required this.backgroundGradient,
@@ -23,6 +25,8 @@ class RiseiTheme {
     required this.accentPurple,
     required this.textWhite,
     required this.textFaint,
+    required this.solidBlack,
+    required this.solidWhite,
   });
 }
 
@@ -41,6 +45,8 @@ final RiseiTheme purpleCyanTheme = RiseiTheme(
   accentPurple: const Color(0xFF8B5CF6),
   textWhite: Colors.white,
   textFaint: Colors.white70,
+  solidBlack: Colors.black,
+  solidWhite: Colors.white,
 );
 
 final RiseiTheme orangePinkTheme = RiseiTheme(
@@ -58,6 +64,8 @@ final RiseiTheme orangePinkTheme = RiseiTheme(
   accentPurple: const Color(0xFFBA68C8),
   textWhite: Colors.white,
   textFaint: Colors.white70,
+  solidBlack: Colors.black,
+  solidWhite: Colors.white,
 );
 
 final RiseiTheme blueGreenTheme = RiseiTheme(
@@ -75,6 +83,8 @@ final RiseiTheme blueGreenTheme = RiseiTheme(
   accentPurple: const Color(0xFF7C4DFF),
   textWhite: Colors.white,
   textFaint: Colors.white70,
+  solidBlack: Colors.black,
+  solidWhite: Colors.white,
 );
 
 final RiseiTheme redAmberTheme = RiseiTheme(
@@ -92,4 +102,44 @@ final RiseiTheme redAmberTheme = RiseiTheme(
   accentPurple: const Color(0xFF8E24AA),
   textWhite: Colors.white,
   textFaint: Colors.white70,
+  solidBlack: Colors.black,
+  solidWhite: Colors.white,
+);
+
+final RiseiTheme solidBlackTheme = RiseiTheme(
+  backgroundGradient: const LinearGradient(
+    colors: [Colors.black, Colors.black],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  ),
+  primarySwatch: Colors.grey,
+  accentCyan: Colors.cyan,
+  accentYellow: Colors.yellow,
+  accentBlue: Colors.blue,
+  accentGreen: Colors.green,
+  accentRed: Colors.red,
+  accentPurple: Colors.purple,
+  textWhite: Colors.white,
+  textFaint: Colors.white70,
+  solidBlack: Colors.black,
+  solidWhite: Colors.white,
+);
+
+final RiseiTheme solidWhiteTheme = RiseiTheme(
+  backgroundGradient: const LinearGradient(
+    colors: [Colors.white, Colors.white],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  ),
+  primarySwatch: Colors.grey,
+  accentCyan: Colors.cyan,
+  accentYellow: Colors.yellow,
+  accentBlue: Colors.blue,
+  accentGreen: Colors.green,
+  accentRed: Colors.red,
+  accentPurple: Colors.purple,
+  textWhite: Colors.black,
+  textFaint: Colors.black54,
+  solidBlack: Colors.black,
+  solidWhite: Colors.white,
 );
