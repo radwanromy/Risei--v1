@@ -135,7 +135,7 @@ class _MainNavigationState extends State<MainNavigation> {
                   widget.themeMode == ThemeMode.dark ? ThemeMode.light : ThemeMode.dark,
                 );
               },
-            ),
+            ),/*
             PopupMenuButton<MaterialColor>(
               icon: Icon(Icons.color_lens, color: theme.accentCyan),
               tooltip: "Change Primary Color",
@@ -192,7 +192,7 @@ class _MainNavigationState extends State<MainNavigation> {
                   ),
                 ),
               ],
-            ),
+            ), */
             PopupMenuButton<RiseiTheme>(
               icon: Icon(Icons.palette, color: theme.accentYellow),
               tooltip: "Change App Theme",
