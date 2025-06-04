@@ -7,6 +7,7 @@ import 'screens/tasks_screen.dart';
 import 'screens/sleep_sounds_screen.dart';
 import 'screens/text_to_speech_screen.dart';
 
+// Supported locales
 const List<Locale> supportedLocales = [
   Locale('en', 'US'),
   Locale('ja', 'JP'),
@@ -17,6 +18,130 @@ const List<Locale> supportedLocales = [
   Locale('zh', 'CN'),
 ];
 
+// Menu titles and labels per language
+const localizedMenu = {
+  'en': {
+    'tasks': 'Tasks',
+    'learning': 'Learning',
+    'wellbeing': 'Well-being',
+    'jokes': 'Jokes',
+    'sleep': 'Sleep Sounds',
+    'tts': 'Text to Speech',
+    'toggle_theme': 'Toggle Theme',
+    'change_theme': 'Change App Theme',
+    'change_language': 'Change Language',
+    'purple_cyan': 'Purple Cyan',
+    'orange_pink': 'Orange Pink',
+    'blue_green': 'Blue Green',
+    'red_amber': 'Red Amber',
+    'solid_black': 'Solid Black',
+    'solid_white': 'Solid White',
+  },
+  'ja': {
+    'tasks': 'タスク',
+    'learning': '学習',
+    'wellbeing': '健康',
+    'jokes': 'ジョーク',
+    'sleep': '睡眠サウンド',
+    'tts': 'テキスト読み上げ',
+    'toggle_theme': 'テーマ切替',
+    'change_theme': 'テーマ変更',
+    'change_language': '言語を変更',
+    'purple_cyan': 'パープルシアン',
+    'orange_pink': 'オレンジピンク',
+    'blue_green': 'ブルーグリーン',
+    'red_amber': 'レッドアンバー',
+    'solid_black': 'ソリッドブラック',
+    'solid_white': 'ソリッドホワイト',
+  },
+  'bn': {
+    'tasks': 'টাস্ক',
+    'learning': 'শেখা',
+    'wellbeing': 'মঙ্গল',
+    'jokes': 'কৌতুক',
+    'sleep': 'ঘুমের সুর',
+    'tts': 'টেক্সট টু স্পিচ',
+    'toggle_theme': 'থিম পরিবর্তন',
+    'change_theme': 'থিম পরিবর্তন করুন',
+    'change_language': 'ভাষা পরিবর্তন করুন',
+    'purple_cyan': 'পার্পল সায়ান',
+    'orange_pink': 'কমলা গোলাপী',
+    'blue_green': 'নীল সবুজ',
+    'red_amber': 'লাল অ্যাম্বার',
+    'solid_black': 'সলিড ব্ল্যাক',
+    'solid_white': 'সলিড হোয়াইট',
+  },
+  'es': {
+    'tasks': 'Tareas',
+    'learning': 'Aprendizaje',
+    'wellbeing': 'Bienestar',
+    'jokes': 'Bromas',
+    'sleep': 'Sonidos para Dormir',
+    'tts': 'Texto a Voz',
+    'toggle_theme': 'Cambiar Tema',
+    'change_theme': 'Cambiar Tema de la App',
+    'change_language': 'Cambiar Idioma',
+    'purple_cyan': 'Púrpura Cian',
+    'orange_pink': 'Naranja Rosa',
+    'blue_green': 'Azul Verde',
+    'red_amber': 'Rojo Ámbar',
+    'solid_black': 'Negro Sólido',
+    'solid_white': 'Blanco Sólido',
+  },
+  'fr': {
+    'tasks': 'Tâches',
+    'learning': 'Apprentissage',
+    'wellbeing': 'Bien-être',
+    'jokes': 'Blagues',
+    'sleep': 'Sons pour Dormir',
+    'tts': 'Texte en Parole',
+    'toggle_theme': 'Changer le Thème',
+    'change_theme': 'Changer le Thème de l\'App',
+    'change_language': 'Changer de Langue',
+    'purple_cyan': 'Violet Cyan',
+    'orange_pink': 'Orange Rose',
+    'blue_green': 'Bleu Vert',
+    'red_amber': 'Rouge Ambre',
+    'solid_black': 'Noir Uni',
+    'solid_white': 'Blanc Uni',
+  },
+  'ar': {
+    'tasks': 'المهام',
+    'learning': 'التعلم',
+    'wellbeing': 'الرفاهية',
+    'jokes': 'نكت',
+    'sleep': 'أصوات النوم',
+    'tts': 'تحويل النص إلى كلام',
+    'toggle_theme': 'تبديل السمة',
+    'change_theme': 'تغيير سمة التطبيق',
+    'change_language': 'تغيير اللغة',
+    'purple_cyan': 'أرجواني سماوي',
+    'orange_pink': 'برتقالي وردي',
+    'blue_green': 'أزرق أخضر',
+    'red_amber': 'أحمر كهرماني',
+    'solid_black': 'أسود صلب',
+    'solid_white': 'أبيض صلب',
+  },
+  'zh': {
+    'tasks': '任务',
+    'learning': '学习',
+    'wellbeing': '健康',
+    'jokes': '笑话',
+    'sleep': '助眠音',
+    'tts': '文字转语音',
+    'toggle_theme': '切换主题',
+    'change_theme': '更改应用主题',
+    'change_language': '更改语言',
+    'purple_cyan': '紫色青色',
+    'orange_pink': '橙色粉色',
+    'blue_green': '蓝绿色',
+    'red_amber': '红琥珀色',
+    'solid_black': '纯黑',
+    'solid_white': '纯白',
+  },
+};
+
+// Language display names for the picker
 const Map<String, String> languageNames = {
   'en': 'English',
   'ja': '日本語',
@@ -27,6 +152,16 @@ const Map<String, String> languageNames = {
   'zh': '中文',
 };
 
+String getLocaleCode(Locale locale) =>
+    locale.languageCode.toLowerCase();
+
+String t(Locale locale, String key) {
+  final langCode = getLocaleCode(locale);
+  return localizedMenu[langCode]?[key] ??
+      localizedMenu['en']![key] ??
+      key;
+}
+
 class MainNavigation extends StatefulWidget {
   final ThemeMode themeMode;
   final void Function(ThemeMode) onThemeModeChanged;
@@ -34,8 +169,6 @@ class MainNavigation extends StatefulWidget {
   final void Function(MaterialColor) onSwatchChanged;
   final Locale locale;
   final void Function(Locale) onLocaleChanged;
-
-  /// Advanced theme switching support
   final RiseiTheme riseiTheme;
   final void Function(RiseiTheme) onThemeChanged;
 
@@ -80,15 +213,6 @@ class _MainNavigationState extends State<MainNavigation> {
     ];
   }
 
-  final List<String> _titles = [
-    'Tasks',
-    'Learning',
-    'Well-being',
-    'Jokes',
-    'Sleep Sounds',
-    'Text to Speech',
-  ];
-
   @override
   void didUpdateWidget(covariant MainNavigation oldWidget) {
     super.didUpdateWidget(oldWidget);
@@ -108,6 +232,7 @@ class _MainNavigationState extends State<MainNavigation> {
   @override
   Widget build(BuildContext context) {
     final theme = widget.riseiTheme;
+    final locale = widget.locale;
 
     return Container(
       decoration: BoxDecoration(
@@ -117,7 +242,14 @@ class _MainNavigationState extends State<MainNavigation> {
         backgroundColor: Colors.transparent,
         appBar: AppBar(
           title: Text(
-            _titles[_currentIndex],
+            [
+              t(locale, 'tasks'),
+              t(locale, 'learning'),
+              t(locale, 'wellbeing'),
+              t(locale, 'jokes'),
+              t(locale, 'sleep'),
+              t(locale, 'tts'),
+            ][_currentIndex],
             style: TextStyle(
               color: theme.textWhite,
               fontWeight: FontWeight.bold,
@@ -133,119 +265,128 @@ class _MainNavigationState extends State<MainNavigation> {
                 widget.themeMode == ThemeMode.dark ? Icons.dark_mode : Icons.light_mode,
                 color: theme.accentYellow,
               ),
-              tooltip: "Toggle Theme",
+              tooltip: t(locale, 'toggle_theme'),
               onPressed: () {
                 widget.onThemeModeChanged(
                   widget.themeMode == ThemeMode.dark ? ThemeMode.light : ThemeMode.dark,
                 );
               },
-            ),/*
-            PopupMenuButton<MaterialColor>(
-              icon: Icon(Icons.color_lens, color: theme.accentCyan),
-              tooltip: "Change Primary Color",
-              onSelected: (color) => widget.onSwatchChanged(color),
-              itemBuilder: (context) => [
-                PopupMenuItem(
-                  value: Colors.indigo,
-                  child: Row(
-                    children: [
-                      CircleAvatar(backgroundColor: Colors.indigo, radius: 10),
-                      const SizedBox(width: 8),
-                      const Text('Indigo')
-                    ],
-                  ),
-                ),
-                PopupMenuItem(
-                  value: Colors.pink,
-                  child: Row(
-                    children: [
-                      CircleAvatar(backgroundColor: Colors.pink, radius: 10),
-                      const SizedBox(width: 8),
-                      const Text('Pink')
-                    ],
-                  ),
-                ),
-                PopupMenuItem(
-                  value: Colors.teal,
-                  child: Row(
-                    children: [
-                      CircleAvatar(backgroundColor: Colors.teal, radius: 10),
-                      const SizedBox(width: 8),
-                      const Text('Teal')
-                    ],
-                  ),
-                ),
-                PopupMenuItem(
-                  value: Colors.amber,
-                  child: Row(
-                    children: [
-                      CircleAvatar(backgroundColor: Colors.amber, radius: 10),
-                      const SizedBox(width: 8),
-                      const Text('Amber')
-                    ],
-                  ),
-                ),
-                PopupMenuItem(
-                  value: Colors.deepPurple,
-                  child: Row(
-                    children: [
-                      CircleAvatar(backgroundColor: Colors.deepPurple, radius: 10),
-                      const SizedBox(width: 8),
-                      const Text('Deep Purple')
-                    ],
-                  ),
-                ),
-              ],
-            ), */
+            ),
             PopupMenuButton<RiseiTheme>(
               icon: Icon(Icons.palette, color: theme.accentYellow),
-              tooltip: "Change App Theme",
+              tooltip: t(locale, 'change_theme'),
               onSelected: widget.onThemeChanged,
               itemBuilder: (context) => [
                 PopupMenuItem(
                   value: purpleCyanTheme,
-                  child: const Text('Purple Cyan'),
+                  child: Text(t(locale, 'purple_cyan')),
                 ),
                 PopupMenuItem(
                   value: orangePinkTheme,
-                  child: const Text('Orange Pink'),
+                  child: Text(t(locale, 'orange_pink')),
                 ),
                 PopupMenuItem(
                   value: blueGreenTheme,
-                  child: const Text('Blue Green'),
+                  child: Text(t(locale, 'blue_green')),
                 ),
                 PopupMenuItem(
                   value: redAmberTheme,
-                  child: const Text('Red Amber'),
+                  child: Text(t(locale, 'red_amber')),
                 ),
                 PopupMenuItem(
                   value: solidBlackTheme,
-                  child: const Text('Solid Black'),
+                  child: Text(t(locale, 'solid_black')),
                 ),
                 PopupMenuItem(
                   value: solidWhiteTheme,
-                  child: const Text('Solid White'),
+                  child: Text(t(locale, 'solid_white')),
                 ),
               ],
             ),
             PopupMenuButton<Locale>(
               icon: Icon(Icons.language, color: theme.accentYellow),
-              tooltip: "Change Language",
-              onSelected: (locale) => widget.onLocaleChanged(locale),
+              tooltip: t(locale, 'change_language'),
+              onSelected: widget.onLocaleChanged,
               itemBuilder: (context) => supportedLocales
-                  .map((locale) => PopupMenuItem<Locale>(
-                        value: locale,
+                  .map((l) => PopupMenuItem<Locale>(
+                        value: l,
                         child: Row(
                           children: [
                             const Icon(Icons.language),
                             const SizedBox(width: 8),
-                            Text(languageNames[locale.languageCode] ?? locale.languageCode)
+                            Text(languageNames[l.languageCode] ?? l.languageCode)
                           ],
                         ),
                       ))
                   .toList(),
             ),
           ],
+        ),
+        drawer: Drawer(
+          child: ListView(
+            children: [
+              DrawerHeader(
+                child: Text(
+                  t(locale, 'tasks'),
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+                ),
+              ),
+              ListTile(
+                leading: const Icon(Icons.task),
+                title: Text(t(locale, 'tasks')),
+                selected: _currentIndex == 0,
+                onTap: () {
+                  setState(() => _currentIndex = 0);
+                  Navigator.pop(context);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.school),
+                title: Text(t(locale, 'learning')),
+                selected: _currentIndex == 1,
+                onTap: () {
+                  setState(() => _currentIndex = 1);
+                  Navigator.pop(context);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.self_improvement),
+                title: Text(t(locale, 'wellbeing')),
+                selected: _currentIndex == 2,
+                onTap: () {
+                  setState(() => _currentIndex = 2);
+                  Navigator.pop(context);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.emoji_emotions),
+                title: Text(t(locale, 'jokes')),
+                selected: _currentIndex == 3,
+                onTap: () {
+                  setState(() => _currentIndex = 3);
+                  Navigator.pop(context);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.music_note),
+                title: Text(t(locale, 'sleep')),
+                selected: _currentIndex == 4,
+                onTap: () {
+                  setState(() => _currentIndex = 4);
+                  Navigator.pop(context);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.record_voice_over),
+                title: Text(t(locale, 'tts')), // Text to Speech, localized
+                selected: _currentIndex == 5,
+                onTap: () {
+                  setState(() => _currentIndex = 5);
+                  Navigator.pop(context);
+                },
+              ),
+            ],
+          ),
         ),
         body: _screens[_currentIndex],
         bottomNavigationBar: BottomNavigationBar(
@@ -258,13 +399,13 @@ class _MainNavigationState extends State<MainNavigation> {
               _currentIndex = index;
             });
           },
-          items: const [
-            BottomNavigationBarItem(icon: Icon(Icons.task), label: 'Tasks'),
-            BottomNavigationBarItem(icon: Icon(Icons.school), label: 'Learning'),
-            BottomNavigationBarItem(icon: Icon(Icons.self_improvement), label: 'Well-being'),
-            BottomNavigationBarItem(icon: Icon(Icons.emoji_emotions), label: 'Jokes'),
-            BottomNavigationBarItem(icon: Icon(Icons.music_note), label: 'Sleep Sounds'),
-            BottomNavigationBarItem(icon: Icon(Icons.record_voice_over), label: 'Text to Speech'),
+          items: [
+            BottomNavigationBarItem(icon: const Icon(Icons.task), label: t(locale, 'tasks')),
+            BottomNavigationBarItem(icon: const Icon(Icons.school), label: t(locale, 'learning')),
+            BottomNavigationBarItem(icon: const Icon(Icons.self_improvement), label: t(locale, 'wellbeing')),
+            BottomNavigationBarItem(icon: const Icon(Icons.emoji_emotions), label: t(locale, 'jokes')),
+            BottomNavigationBarItem(icon: const Icon(Icons.music_note), label: t(locale, 'sleep')),
+            BottomNavigationBarItem(icon: const Icon(Icons.record_voice_over), label: t(locale, 'tts')),
           ],
           type: BottomNavigationBarType.fixed,
         ),
