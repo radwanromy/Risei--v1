@@ -4,7 +4,8 @@ import 'screens/learning_screen.dart';
 import 'screens/wellbeing_screen.dart';
 import 'screens/joke_screen.dart';
 import 'screens/tasks_screen.dart';
-import 'screens/sleep_sounds_screen.dart'; // <-- ADD THIS
+import 'screens/sleep_sounds_screen.dart';
+import 'screens/text_to_speech_screen.dart';
 
 const List<Locale> supportedLocales = [
   Locale('en', 'US'),
@@ -74,7 +75,8 @@ class _MainNavigationState extends State<MainNavigation> {
       const LearningScreen(),
       const WellbeingScreen(),
       const JokeScreen(),
-      SleepSoundsScreen(riseiTheme: widget.riseiTheme, locale: widget.locale), // <-- ADD THIS
+      SleepSoundsScreen(riseiTheme: widget.riseiTheme, locale: widget.locale),
+      TextToSpeechScreen(riseiTheme: widget.riseiTheme, locale: widget.locale),
     ];
   }
 
@@ -83,7 +85,8 @@ class _MainNavigationState extends State<MainNavigation> {
     'Learning',
     'Well-being',
     'Jokes',
-    'Sleep Sounds', // <-- ADD THIS
+    'Sleep Sounds',
+    'Text to Speech',
   ];
 
   @override
@@ -99,6 +102,7 @@ class _MainNavigationState extends State<MainNavigation> {
       riseiTheme: widget.riseiTheme,
     );
     _screens[4] = SleepSoundsScreen(riseiTheme: widget.riseiTheme, locale: widget.locale);
+    _screens[5] = TextToSpeechScreen(riseiTheme: widget.riseiTheme, locale: widget.locale);
   }
 
   @override
@@ -259,7 +263,8 @@ class _MainNavigationState extends State<MainNavigation> {
             BottomNavigationBarItem(icon: Icon(Icons.school), label: 'Learning'),
             BottomNavigationBarItem(icon: Icon(Icons.self_improvement), label: 'Well-being'),
             BottomNavigationBarItem(icon: Icon(Icons.emoji_emotions), label: 'Jokes'),
-            BottomNavigationBarItem(icon: Icon(Icons.music_note), label: 'Sleep Sounds'), // <-- ADD THIS
+            BottomNavigationBarItem(icon: Icon(Icons.music_note), label: 'Sleep Sounds'),
+            BottomNavigationBarItem(icon: Icon(Icons.record_voice_over), label: 'Text to Speech'),
           ],
           type: BottomNavigationBarType.fixed,
         ),
