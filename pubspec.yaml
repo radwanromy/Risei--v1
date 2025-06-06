@@ -43,6 +43,7 @@ dependencies:
   cupertino_icons: ^1.0.8
   audioplayers: ^5.2.1
   translator: ^0.1.7
+  health: ^9.0.1
   flutter_localizations:
     sdk: flutter
 
