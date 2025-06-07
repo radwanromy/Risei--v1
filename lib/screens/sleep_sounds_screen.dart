@@ -1010,70 +1010,72 @@ class _SleepSoundsScreenState extends State<SleepSoundsScreen> {
           ),
         ],
       ),
-      body: Container(
-        decoration: BoxDecoration(gradient: theme.backgroundGradient),
-        child: IndexedStack(
-          index: _tabIndex,
-          children: [
-            // Tab 0: All Sounds
-            ListView(
-              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 10),
-              children: [
-                ...soundCategories.map(
-                  (cat) => _SoundCategoryWidget(
-                    category: cat,
-                    theme: theme,
-                    isPlaying: _isPlaying,
-                    volumes: _volumes,
-                    onPlayPause: _toggleSound,
-                    onVolume: _setVolume,
-                    onAddToCustom: _addToCustomMix,
-                    customMix: _customMix,
-                    locale: locale,
+      body: SafeArea(
+        child: Container(
+          decoration: BoxDecoration(gradient: theme.backgroundGradient),
+          child: IndexedStack(
+            index: _tabIndex,
+            children: [
+              // Tab 0: All Sounds
+              ListView(
+                padding: const EdgeInsets.only(top: 12, left: 10, right: 10, bottom: 60),
+                children: [
+                  ...soundCategories.map(
+                    (cat) => _SoundCategoryWidget(
+                      category: cat,
+                      theme: theme,
+                      isPlaying: _isPlaying,
+                      volumes: _volumes,
+                      onPlayPause: _toggleSound,
+                      onVolume: _setVolume,
+                      onAddToCustom: _addToCustomMix,
+                      customMix: _customMix,
+                      locale: locale,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 16),
-                Center(
-                  child: ElevatedButton.icon(
-                    onPressed: () {
-                      setState(() {
-                        _tabIndex = 1;
-                      });
-                    },
-                    icon: const Icon(Icons.tune),
-                    label: Text(tr('go_to_custom_mix', locale)),
-                    style: ElevatedButton.styleFrom(
-                      foregroundColor: Colors.white,
-                      backgroundColor: theme.accentBlue,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(30),
+                  const SizedBox(height: 16),
+                  Center(
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        setState(() {
+                          _tabIndex = 1;
+                        });
+                      },
+                      icon: const Icon(Icons.tune),
+                      label: Text(tr('go_to_custom_mix', locale)),
+                      style: ElevatedButton.styleFrom(
+                        foregroundColor: Colors.white,
+                        backgroundColor: theme.accentBlue,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(30),
+                        ),
                       ),
                     ),
                   ),
-                ),
-                const SizedBox(height: 70),
-              ],
-            ),
-            // Tab 1: Custom (Mix)
-            _CustomMixScreen(
-              customMix: _customMix,
-              isPlaying: _isPlaying,
-              volumes: _volumes,
-              theme: theme,
-              onPlayPause: _toggleSound,
-              onVolume: _setVolume,
-              onRemove: _removeFromCustomMix,
-              onBack: () => setState(() => _tabIndex = 0),
-              onStopAll: _stopAll,
-              locale: locale,
-            ),
-            // Tab 2: Settings
-            _SleepSoundSettings(
-              theme: theme,
-              onStopAll: _stopAll,
-              locale: locale,
-            ),
-          ],
+                  const SizedBox(height: 70),
+                ],
+              ),
+              // Tab 1: Custom (Mix)
+              _CustomMixScreen(
+                customMix: _customMix,
+                isPlaying: _isPlaying,
+                volumes: _volumes,
+                theme: theme,
+                onPlayPause: _toggleSound,
+                onVolume: _setVolume,
+                onRemove: _removeFromCustomMix,
+                onBack: () => setState(() => _tabIndex = 0),
+                onStopAll: _stopAll,
+                locale: locale,
+              ),
+              // Tab 2: Settings
+              _SleepSoundSettings(
+                theme: theme,
+                onStopAll: _stopAll,
+                locale: locale,
+              ),
+            ],
+          ),
         ),
       ),
       bottomNavigationBar: BottomNavigationBar(
@@ -1313,103 +1315,105 @@ class _CustomMixScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        const SizedBox(height: 14),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            IconButton(
-              icon: Icon(Icons.arrow_back, color: theme.accentYellow),
-              onPressed: onBack,
-              tooltip: tr('sounds', locale),
-            ),
-            Text(
-              tr('custom_mix', locale),
-              style: TextStyle(
-                  color: theme.accentYellow,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 18),
-            ),
-            IconButton(
-              icon: Icon(Icons.stop_circle, color: theme.accentCyan),
-              onPressed: onStopAll,
-              tooltip: tr('stop_all_sounds', locale),
-            ),
-          ],
-        ),
-        const Divider(),
-        Expanded(
-          child: customMix.isEmpty
-              ? Center(
-                  child: Text(
-                    tr('no_sounds_mix', locale),
-                    textAlign: TextAlign.center,
-                    style: TextStyle(color: theme.textFaint, fontSize: 16),
-                  ),
-                )
-              : ListView.builder(
-                  padding: const EdgeInsets.all(14),
-                  itemCount: customMix.length,
-                  itemBuilder: (context, i) {
-                    final sound = customMix[i];
-                    final playing = isPlaying[sound.keyName] ?? false;
-                    final volume = volumes[sound.keyName] ?? 0.5;
-                    return Card(
-                      color: playing
-                          ? theme.accentBlue.withOpacity(0.6)
-                          : theme.backgroundGradient.colors[0].withOpacity(0.7),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: ListTile(
-                        leading: Icon(sound.icon,
-                            size: 34,
-                            color: playing
-                                ? Colors.white
-                                : theme.accentCyan.withOpacity(0.9)),
-                        title: Text(
-                          tr(sound.keyName, locale),
-                          style: TextStyle(
+    return SafeArea(
+      child: Column(
+        children: [
+          const SizedBox(height: 14),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              IconButton(
+                icon: Icon(Icons.arrow_back, color: theme.accentYellow),
+                onPressed: onBack,
+                tooltip: tr('sounds', locale),
+              ),
+              Text(
+                tr('custom_mix', locale),
+                style: TextStyle(
+                    color: theme.accentYellow,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18),
+              ),
+              IconButton(
+                icon: Icon(Icons.stop_circle, color: theme.accentCyan),
+                onPressed: onStopAll,
+                tooltip: tr('stop_all_sounds', locale),
+              ),
+            ],
+          ),
+          const Divider(),
+          Expanded(
+            child: customMix.isEmpty
+                ? Center(
+                    child: Text(
+                      tr('no_sounds_mix', locale),
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: theme.textFaint, fontSize: 16),
+                    ),
+                  )
+                : ListView.builder(
+                    padding: const EdgeInsets.only(left: 14, right: 14, top: 0, bottom: 80),
+                    itemCount: customMix.length,
+                    itemBuilder: (context, i) {
+                      final sound = customMix[i];
+                      final playing = isPlaying[sound.keyName] ?? false;
+                      final volume = volumes[sound.keyName] ?? 0.5;
+                      return Card(
+                        color: playing
+                            ? theme.accentBlue.withOpacity(0.6)
+                            : theme.backgroundGradient.colors[0].withOpacity(0.7),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: ListTile(
+                          leading: Icon(sound.icon,
+                              size: 33,
                               color: playing
                                   ? Colors.white
-                                  : theme.textWhite.withOpacity(0.85),
-                              fontWeight: FontWeight.w500),
+                                  : theme.accentCyan.withOpacity(0.9)),
+                          title: Text(
+                            tr(sound.keyName, locale),
+                            style: TextStyle(
+                                color: playing
+                                    ? Colors.white
+                                    : theme.textWhite.withOpacity(0.85),
+                                fontWeight: FontWeight.w500),
+                          ),
+                          subtitle: playing
+                              ? Slider(
+                                  value: volume,
+                                  min: 0,
+                                  max: 1.0,
+                                  onChanged: (v) => onVolume(sound, v),
+                                  activeColor: theme.accentYellow,
+                                  inactiveColor:
+                                      theme.accentYellow.withOpacity(0.5),
+                                )
+                              : null,
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              IconButton(
+                                icon: Icon(
+                                    playing
+                                        ? Icons.pause_circle
+                                        : Icons.play_circle,
+                                    color: theme.accentYellow),
+                                onPressed: () => onPlayPause(sound),
+                              ),
+                              IconButton(
+                                icon: Icon(Icons.delete, color: Colors.redAccent),
+                                onPressed: () => onRemove(sound),
+                              ),
+                            ],
+                          ),
                         ),
-                        subtitle: playing
-                            ? Slider(
-                                value: volume,
-                                min: 0,
-                                max: 1.0,
-                                onChanged: (v) => onVolume(sound, v),
-                                activeColor: theme.accentYellow,
-                                inactiveColor:
-                                    theme.accentYellow.withOpacity(0.5),
-                              )
-                            : null,
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            IconButton(
-                              icon: Icon(
-                                  playing
-                                      ? Icons.pause_circle
-                                      : Icons.play_circle,
-                                  color: theme.accentYellow),
-                              onPressed: () => onPlayPause(sound),
-                            ),
-                            IconButton(
-                              icon: Icon(Icons.delete, color: Colors.redAccent),
-                              onPressed: () => onRemove(sound),
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  },
-                ),
-        ),
-      ],
+                      );
+                    },
+                  ),
+          ),
+        ],
+      ),
     );
   }
 }

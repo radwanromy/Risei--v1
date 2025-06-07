@@ -37,7 +37,7 @@ const localizedStrings = {
     'upgrade': 'Pro version upgrade',
     'detected_language': 'Detected language',
     'translating': 'Translating...',
-    'listen_translation': 'Listen Translation',
+    'listen_translation': 'Listen',
     'hint': 'Paste or type your text here...',
     'translation': 'Translation',
     'speak_original': 'Speak Original',
