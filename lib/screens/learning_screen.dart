@@ -11,6 +11,7 @@ class LearningScreen extends StatefulWidget {
 
 class _LearningScreenState extends State<LearningScreen> {
   String selectedCategory = "All";
+  String searchQuery = "";
 
   final List<Map<String, dynamic>> categories = [
     {"label": "All", "icon": Icons.grid_view},
@@ -26,7 +27,7 @@ class _LearningScreenState extends State<LearningScreen> {
 
   final List<Map<String, dynamic>> courses = [
     {
-      "image": "https://images.unsplash.com/photo-1517520287167-4bbf64a00d66?auto=format&fit=crop&w=400&q=80",
+      "image": "assets/images/design_thinking_fundamentals.jpg", // Local asset for Design Thinking Fundamentals
       "title": "Design Thinking Fundamental",
       "tutor": "Robert Green",
       "price": "\$180",
@@ -94,16 +95,37 @@ class _LearningScreenState extends State<LearningScreen> {
     },
   ];
 
+  List<Map<String, dynamic>> get filteredCourses {
+    List<Map<String, dynamic>> list = selectedCategory == "All"
+        ? courses
+        : courses.where((c) => c["category"] == selectedCategory).toList();
+    if (searchQuery.trim().isNotEmpty) {
+      list = list
+          .where((c) =>
+              (c["title"] as String).toLowerCase().contains(searchQuery.toLowerCase()) ||
+              (c["tutor"] as String).toLowerCase().contains(searchQuery.toLowerCase()))
+          .toList();
+    }
+    return list;
+  }
+
+  List<Map<String, dynamic>> get filteredMentors {
+    List<Map<String, dynamic>> list = selectedCategory == "All"
+        ? mentors
+        : mentors.where((m) => m["category"] == selectedCategory).toList();
+    if (searchQuery.trim().isNotEmpty) {
+      list = list
+          .where((m) =>
+              (m["name"] as String).toLowerCase().contains(searchQuery.toLowerCase()) ||
+              (m["label"] as String).toLowerCase().contains(searchQuery.toLowerCase()))
+          .toList();
+    }
+    return list;
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = widget.riseiTheme;
-
-    final filteredCourses = selectedCategory == "All"
-        ? courses
-        : courses.where((c) => c["category"] == selectedCategory).toList();
-    final filteredMentors = selectedCategory == "All"
-        ? mentors
-        : mentors.where((m) => m["category"] == selectedCategory).toList();
 
     return Container(
       decoration: BoxDecoration(
@@ -195,7 +217,11 @@ class _LearningScreenState extends State<LearningScreen> {
                             hintStyle: TextStyle(color: theme.textFaint),
                           ),
                           style: TextStyle(fontSize: 16, color: theme.textWhite),
-                          onChanged: (value) {},
+                          onChanged: (value) {
+                            setState(() {
+                              searchQuery = value;
+                            });
+                          },
                         ),
                       ),
                       Icon(Icons.tune, color: theme.accentBlue),
@@ -331,7 +357,7 @@ class _LearningScreenState extends State<LearningScreen> {
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 4),
                         child: SizedBox(
-                          height: 200,
+                          height: 180,
                           child: filteredCourses.isEmpty
                               ? Center(child: Text("No courses found", style: TextStyle(color: theme.textFaint)))
                               : ListView.separated(
@@ -402,7 +428,6 @@ class _LearningScreenState extends State<LearningScreen> {
   }
 }
 
-// --- Polished course card for horizontal scrolling ---
 class _PolishedCourseCard extends StatelessWidget {
   final String image;
   final String title;
@@ -426,10 +451,10 @@ class _PolishedCourseCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Key fix: Use Flexible or Expanded where needed, constrain heights, and ellipsis for all text.
+    final isAsset = image.startsWith('assets/');
     return Container(
       width: 210,
-      height: 110,
+      height: 180,
       decoration: BoxDecoration(
         color: theme.backgroundGradient.colors[0],
         borderRadius: BorderRadius.circular(16),
@@ -447,94 +472,107 @@ class _PolishedCourseCard extends StatelessWidget {
           // Cover image
           ClipRRect(
             borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-            child: Image.network(
-              image,
-              height: 38,
-              width: double.infinity,
-              fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => Container(
-                height: 38,
-                color: Colors.grey.shade300,
-                child: Icon(Icons.image, color: Colors.grey, size: 18),
-              ),
-            ),
+            child: isAsset
+                ? Image.asset(
+                    image,
+                    height: 100,
+                    width: double.infinity,
+                    fit: BoxFit.cover,
+                  )
+                : Image.network(
+                    image,
+                    height: 100,
+                    width: double.infinity,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => Container(
+                      height: 100,
+                      color: Colors.grey.shade300,
+                      child: Icon(Icons.image, color: Colors.grey, size: 30),
+                    ),
+                  ),
           ),
-          Padding(
-            padding: const EdgeInsets.all(7.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (bestSeller)
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 1),
-                    decoration: BoxDecoration(
-                      color: theme.accentYellow.withOpacity(0.22),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Text(
-                      "Best Seller",
-                      style: TextStyle(
-                        color: theme.accentYellow,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 9,
-                      ),
-                    ),
-                  ),
-                if (bestSeller) const SizedBox(height: 2),
-                Text(
-                  title,
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 12,
-                    color: theme.textWhite,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                Text(
-                  tutor,
-                  style: TextStyle(
-                    color: theme.accentBlue,
-                    fontWeight: FontWeight.w500,
-                    fontSize: 10,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                Row(
+          // The fix: Wrap the details in Expanded + SingleChildScrollView to avoid overflow
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.all(7.0),
+              child: SingleChildScrollView(
+                physics: NeverScrollableScrollPhysics(),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(Icons.star, size: 11, color: theme.accentYellow),
-                    const SizedBox(width: 2),
+                    if (bestSeller)
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 1),
+                        decoration: BoxDecoration(
+                          color: theme.accentYellow.withOpacity(0.22),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          "Best Seller",
+                          style: TextStyle(
+                            color: theme.accentYellow,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 9,
+                          ),
+                        ),
+                      ),
+                    if (bestSeller) const SizedBox(height: 2),
                     Text(
-                      rating.toString(),
+                      title,
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
-                        color: theme.accentYellow,
+                        fontSize: 12,
+                        color: theme.textWhite,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    Text(
+                      tutor,
+                      style: TextStyle(
+                        color: theme.accentBlue,
+                        fontWeight: FontWeight.w500,
                         fontSize: 10,
                       ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(width: 7),
-                    Icon(Icons.play_circle_fill, size: 11, color: theme.accentBlue),
-                    const SizedBox(width: 2),
+                    Row(
+                      children: [
+                        Icon(Icons.star, size: 11, color: theme.accentYellow),
+                        const SizedBox(width: 2),
+                        Text(
+                          rating.toString(),
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: theme.accentYellow,
+                            fontSize: 10,
+                          ),
+                        ),
+                        const SizedBox(width: 7),
+                        Icon(Icons.play_circle_fill, size: 11, color: theme.accentBlue),
+                        const SizedBox(width: 2),
+                        Text(
+                          "$lessons lessons",
+                          style: TextStyle(
+                            color: theme.textFaint,
+                            fontSize: 9,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
                     Text(
-                      "$lessons lessons",
+                      price,
                       style: TextStyle(
-                        color: theme.textFaint,
-                        fontSize: 9,
-                        fontWeight: FontWeight.w500,
+                        color: theme.textWhite,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
                       ),
                     ),
                   ],
                 ),
-                Text(
-                  price,
-                  style: TextStyle(
-                    color: theme.textWhite,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 12,
-                  ),
-                ),
-              ],
+              ),
             ),
           ),
         ],
