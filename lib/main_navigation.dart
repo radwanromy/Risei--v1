@@ -6,6 +6,7 @@ import 'screens/joke_screen.dart';
 import 'screens/tasks_screen.dart';
 import 'screens/sleep_sounds_screen.dart';
 import 'screens/text_to_speech_screen.dart';
+import 'screens/learning_screen.dart';
 
 // Supported locales
 const List<Locale> supportedLocales = [
@@ -205,7 +206,7 @@ class _MainNavigationState extends State<MainNavigation> {
         onLocaleChanged: widget.onLocaleChanged,
         riseiTheme: widget.riseiTheme,
       ),
-      const LearningScreen(),
+      LearningScreen(riseiTheme: widget.riseiTheme), // Pass riseiTheme here!
       const WellbeingScreen(),
       const JokeScreen(),
       SleepSoundsScreen(riseiTheme: widget.riseiTheme, locale: widget.locale),
@@ -225,6 +226,7 @@ class _MainNavigationState extends State<MainNavigation> {
       onLocaleChanged: widget.onLocaleChanged,
       riseiTheme: widget.riseiTheme,
     );
+    _screens[1] = LearningScreen(riseiTheme: widget.riseiTheme); // update here too!
     _screens[4] = SleepSoundsScreen(riseiTheme: widget.riseiTheme, locale: widget.locale);
     _screens[5] = TextToSpeechScreen(riseiTheme: widget.riseiTheme, locale: widget.locale);
   }

@@ -1064,7 +1064,7 @@ class _TasksScreenState extends State<TasksScreen> {
                 leading: Icon(Icons.school, color: widget.riseiTheme.accentYellow),
                 title: Text(tr('learning', loc), style: TextStyle(color: widget.riseiTheme.textWhite)),
                 onTap: () {
-                  _navigateTo(context, const LearningScreen());
+                  _navigateTo(context, LearningScreen(riseiTheme: widget.riseiTheme));
                 },
               ),
               ListTile(
