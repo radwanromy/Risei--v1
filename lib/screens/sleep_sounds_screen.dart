@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'dart:async';
 import '../theme_colors.dart';
+import 'package:share_plus/share_plus.dart';
 
 // --- Localization Section ---
 
@@ -818,8 +819,6 @@ final List<_SoundCategory> soundCategories = [
   ),
 ];
 
-// --- Main App ---
-
 class SleepSoundsScreen extends StatefulWidget {
   final RiseiTheme riseiTheme;
   final Locale locale;
@@ -853,26 +852,27 @@ class _SleepSoundsScreenState extends State<SleepSoundsScreen> {
     super.dispose();
   }
 
+  /// This allows multiple sounds to be played/paused at once.
   void _toggleSound(SleepSound sound) async {
     final key = sound.keyName;
-    if (!mounted) return;
+    final currentlyPlaying = _isPlaying[key] ?? false;
     setState(() {
-      _isPlaying[key] = !(_isPlaying[key] ?? false);
+      _isPlaying[key] = !currentlyPlaying;
     });
 
-    if (_isPlaying[key] == true) {
-      final player = AudioPlayer();
-      _players[key] = player;
-      _volumes[key] = 0.5;
-      await player.setReleaseMode(ReleaseMode.loop);
-      await player.setVolume(0.5);
-      await player.play(AssetSource(sound.asset));
-    } else {
-      if (_players.containsKey(key)) {
-        await _players[key]?.stop();
-        await _players[key]?.dispose();
-        _players.remove(key);
+    if (!currentlyPlaying) {
+      if (_players[key] == null) {
+        final player = AudioPlayer();
+        _players[key] = player;
+        _volumes[key] = _volumes[key] ?? 0.5;
+        await player.setReleaseMode(ReleaseMode.loop);
+        await player.setVolume(_volumes[key]!);
+        await player.play(AssetSource(sound.asset));
       }
+    } else {
+      await _players[key]?.stop();
+      await _players[key]?.dispose();
+      _players.remove(key);
     }
     setState(() {});
   }
@@ -888,6 +888,16 @@ class _SleepSoundsScreenState extends State<SleepSoundsScreen> {
     setState(() {
       if (!_customMix.contains(sound)) {
         _customMix.add(sound);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              '${tr(sound.keyName, widget.locale)} added to Custom Mix!',
+              style: const TextStyle(color: Colors.black),
+            ),
+            backgroundColor: widget.riseiTheme.accentYellow,
+            duration: const Duration(seconds: 2),
+          ),
+        );
       }
     });
   }
@@ -895,6 +905,28 @@ class _SleepSoundsScreenState extends State<SleepSoundsScreen> {
   void _removeFromCustomMix(SleepSound sound) {
     setState(() {
       _customMix.remove(sound);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            '${tr(sound.keyName, widget.locale)} removed from Custom Mix!',
+            style: const TextStyle(color: Colors.black),
+          ),
+          backgroundColor: widget.riseiTheme.accentYellow,
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    });
+  }
+
+  void _replaceCustomMixOrder(List<SleepSound> newOrder) {
+    setState(() {
+      _customMix = List.from(newOrder);
+    });
+  }
+
+  void _resetCustomMix() {
+    setState(() {
+      _customMix.clear();
     });
   }
 
@@ -1010,6 +1042,29 @@ class _SleepSoundsScreenState extends State<SleepSoundsScreen> {
           ),
         ],
       ),
+      floatingActionButton: _tabIndex == 0
+          ? FloatingActionButton.extended(
+              icon: const Icon(Icons.star),
+              label: Text(tr('custom_mix', locale)),
+              backgroundColor: theme.accentYellow,
+              foregroundColor: Colors.black,
+              onPressed: () {
+                setState(() {
+                  _tabIndex = 1;
+                });
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      "Tip: Tap the ★ on any sound to add/remove it from your Custom Mix!",
+                      style: const TextStyle(color: Colors.black),
+                    ),
+                    backgroundColor: theme.accentYellow,
+                    duration: const Duration(seconds: 3),
+                  ),
+                );
+              },
+            )
+          : null,
       body: SafeArea(
         child: Container(
           decoration: BoxDecoration(gradient: theme.backgroundGradient),
@@ -1029,6 +1084,7 @@ class _SleepSoundsScreenState extends State<SleepSoundsScreen> {
                       onPlayPause: _toggleSound,
                       onVolume: _setVolume,
                       onAddToCustom: _addToCustomMix,
+                      onRemoveFromCustom: _removeFromCustomMix,
                       customMix: _customMix,
                       locale: locale,
                     ),
@@ -1040,6 +1096,16 @@ class _SleepSoundsScreenState extends State<SleepSoundsScreen> {
                         setState(() {
                           _tabIndex = 1;
                         });
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              "Tip: Tap the ★ on any sound to add/remove it from your Custom Mix!",
+                              style: const TextStyle(color: Colors.black),
+                            ),
+                            backgroundColor: theme.accentYellow,
+                            duration: const Duration(seconds: 3),
+                          ),
+                        );
                       },
                       icon: const Icon(Icons.tune),
                       label: Text(tr('go_to_custom_mix', locale)),
@@ -1064,6 +1130,8 @@ class _SleepSoundsScreenState extends State<SleepSoundsScreen> {
                 onPlayPause: _toggleSound,
                 onVolume: _setVolume,
                 onRemove: _removeFromCustomMix,
+                onOrderChanged: _replaceCustomMixOrder,
+                onReset: _resetCustomMix,
                 onBack: () => setState(() => _tabIndex = 0),
                 onStopAll: _stopAll,
                 locale: locale,
@@ -1087,15 +1155,15 @@ class _SleepSoundsScreenState extends State<SleepSoundsScreen> {
         onTap: (index) => setState(() => _tabIndex = index),
         items: [
           BottomNavigationBarItem(
-            icon: Icon(Icons.music_note),
+            icon: const Icon(Icons.music_note),
             label: tr('sounds', locale),
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.tune),
+            icon: const Icon(Icons.tune),
             label: tr('custom', locale),
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.settings),
+            icon: const Icon(Icons.settings),
             label: tr('settings', locale),
           ),
         ],
@@ -1113,6 +1181,7 @@ class _SoundCategoryWidget extends StatelessWidget {
   final Function(SleepSound) onPlayPause;
   final Function(SleepSound, double) onVolume;
   final Function(SleepSound) onAddToCustom;
+  final Function(SleepSound) onRemoveFromCustom;
   final List<SleepSound> customMix;
   final Locale locale;
 
@@ -1124,6 +1193,7 @@ class _SoundCategoryWidget extends StatelessWidget {
     required this.onPlayPause,
     required this.onVolume,
     required this.onAddToCustom,
+    required this.onRemoveFromCustom,
     required this.customMix,
     required this.locale,
     Key? key,
@@ -1163,6 +1233,7 @@ class _SoundCategoryWidget extends StatelessWidget {
                 onPlayPause: () => onPlayPause(sound),
                 onVolume: (v) => onVolume(sound, v),
                 onAddToCustom: () => onAddToCustom(sound),
+                onRemoveFromCustom: () => onRemoveFromCustom(sound),
                 customActive: customMix.contains(sound),
                 locale: locale,
               ),
@@ -1183,6 +1254,7 @@ class _SoundIconButton extends StatelessWidget {
   final VoidCallback onPlayPause;
   final ValueChanged<double> onVolume;
   final VoidCallback onAddToCustom;
+  final VoidCallback onRemoveFromCustom;
   final bool customActive;
   final Locale locale;
 
@@ -1194,6 +1266,7 @@ class _SoundIconButton extends StatelessWidget {
     required this.onPlayPause,
     required this.onVolume,
     required this.onAddToCustom,
+    required this.onRemoveFromCustom,
     required this.customActive,
     required this.locale,
     Key? key,
@@ -1265,19 +1338,36 @@ class _SoundIconButton extends StatelessWidget {
                   ],
                 ),
               const SizedBox(height: 2),
-              GestureDetector(
-                onTap: () {
-                  if (!customActive) {
-                    onAddToCustom();
-                  }
-                },
-                child: Icon(
-                  customActive ? Icons.star : Icons.star_border,
-                  size: 18,
-                  color: customActive
-                      ? theme.accentYellow
-                      : theme.textFaint.withOpacity(0.7),
-                ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  GestureDetector(
+                    onTap: () {
+                      if (!customActive) {
+                        onAddToCustom();
+                      } else {
+                        onRemoveFromCustom();
+                      }
+                    },
+                    child: Icon(
+                      customActive ? Icons.star : Icons.star_border,
+                      size: 22,
+                      color: customActive
+                          ? theme.accentYellow
+                          : theme.textFaint.withOpacity(0.7),
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    customActive ? "Remove" : "Add",
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: customActive
+                          ? theme.accentYellow
+                          : theme.textFaint.withOpacity(0.7),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -1287,6 +1377,7 @@ class _SoundIconButton extends StatelessWidget {
   }
 }
 
+// -- FIX: Stateless CustomMixScreen! --
 class _CustomMixScreen extends StatelessWidget {
   final List<SleepSound> customMix;
   final Map<String, bool> isPlaying;
@@ -1295,6 +1386,8 @@ class _CustomMixScreen extends StatelessWidget {
   final Function(SleepSound) onPlayPause;
   final Function(SleepSound, double) onVolume;
   final Function(SleepSound) onRemove;
+  final void Function(List<SleepSound>) onOrderChanged;
+  final VoidCallback onReset;
   final VoidCallback onBack;
   final VoidCallback onStopAll;
   final Locale locale;
@@ -1307,6 +1400,8 @@ class _CustomMixScreen extends StatelessWidget {
     required this.onPlayPause,
     required this.onVolume,
     required this.onRemove,
+    required this.onOrderChanged,
+    required this.onReset,
     required this.onBack,
     required this.onStopAll,
     required this.locale,
@@ -1315,6 +1410,7 @@ class _CustomMixScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    String mixName = "My Mix";
     return SafeArea(
       child: Column(
         children: [
@@ -1327,41 +1423,97 @@ class _CustomMixScreen extends StatelessWidget {
                 onPressed: onBack,
                 tooltip: tr('sounds', locale),
               ),
-              Text(
-                tr('custom_mix', locale),
-                style: TextStyle(
-                    color: theme.accentYellow,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 18),
+              Expanded(
+                child: Text(
+                  tr('custom_mix', locale),
+                  style: TextStyle(
+                      color: theme.accentYellow,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18),
+                  textAlign: TextAlign.center,
+                ),
               ),
-              IconButton(
-                icon: Icon(Icons.stop_circle, color: theme.accentCyan),
-                onPressed: onStopAll,
-                tooltip: tr('stop_all_sounds', locale),
+              Row(
+                children: [
+                  IconButton(
+                    icon: Icon(Icons.share, color: theme.accentYellow),
+                    tooltip: 'Share mix',
+                    onPressed: () {
+                      if (customMix.isEmpty) return;
+                      final names = customMix.map((s) => tr(s.keyName, locale)).join(', ');
+                      final mixInfo = "🎵 $mixName\n${tr('custom_mix', locale)}: $names";
+                      Share.share(mixInfo, subject: 'My Sleep Sounds Custom Mix');
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Mix copied, share anywhere!'),
+                        ),
+                      );
+                    },
+                  ),
+                  IconButton(
+                    icon: Icon(Icons.save, color: theme.accentBlue),
+                    tooltip: 'Save mix locally',
+                    onPressed: () {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Mix saved locally! (Demo only)')),
+                      );
+                    },
+                  ),
+                  IconButton(
+                    icon: Icon(Icons.stop_circle, color: theme.accentCyan),
+                    onPressed: onStopAll,
+                    tooltip: tr('stop_all_sounds', locale),
+                  ),
+                ],
               ),
             ],
           ),
           const Divider(),
+          if (customMix.isNotEmpty)
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    foregroundColor: Colors.white,
+                    backgroundColor: Colors.redAccent,
+                  ),
+                  icon: const Icon(Icons.delete_sweep),
+                  label: const Text("Reset Mix"),
+                  onPressed: onReset,
+                ),
+              ],
+            ),
           Expanded(
             child: customMix.isEmpty
                 ? Center(
                     child: Text(
                       tr('no_sounds_mix', locale),
                       textAlign: TextAlign.center,
-                      style: TextStyle(color: theme.textFaint, fontSize: 16),
+                      style: TextStyle(
+                          color: theme.textFaint, fontSize: 16),
                     ),
                   )
-                : ListView.builder(
+                : ReorderableListView.builder(
                     padding: const EdgeInsets.only(left: 14, right: 14, top: 0, bottom: 80),
                     itemCount: customMix.length,
+                    onReorder: (oldIndex, newIndex) {
+                      List<SleepSound> newOrder = List.from(customMix);
+                      if (newIndex > oldIndex) newIndex -= 1;
+                      final item = newOrder.removeAt(oldIndex);
+                      newOrder.insert(newIndex, item);
+                      onOrderChanged(newOrder);
+                    },
                     itemBuilder: (context, i) {
                       final sound = customMix[i];
                       final playing = isPlaying[sound.keyName] ?? false;
                       final volume = volumes[sound.keyName] ?? 0.5;
                       return Card(
+                        key: ValueKey(sound.keyName),
                         color: playing
                             ? theme.accentBlue.withOpacity(0.6)
-                            : theme.backgroundGradient.colors[0].withOpacity(0.7),
+                            : theme.backgroundGradient.colors[0]
+                                .withOpacity(0.7),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(16),
                         ),
@@ -1384,10 +1536,11 @@ class _CustomMixScreen extends StatelessWidget {
                                   value: volume,
                                   min: 0,
                                   max: 1.0,
-                                  onChanged: (v) => onVolume(sound, v),
+                                  onChanged: (v) =>
+                                      onVolume(sound, v),
                                   activeColor: theme.accentYellow,
-                                  inactiveColor:
-                                      theme.accentYellow.withOpacity(0.5),
+                                  inactiveColor: theme.accentYellow
+                                      .withOpacity(0.5),
                                 )
                               : null,
                           trailing: Row(
@@ -1402,9 +1555,11 @@ class _CustomMixScreen extends StatelessWidget {
                                 onPressed: () => onPlayPause(sound),
                               ),
                               IconButton(
-                                icon: Icon(Icons.delete, color: Colors.redAccent),
+                                icon: const Icon(Icons.delete, color: Colors.redAccent),
                                 onPressed: () => onRemove(sound),
                               ),
+                              const SizedBox(width: 2),
+                              const Icon(Icons.drag_handle),
                             ],
                           ),
                         ),
@@ -1445,7 +1600,6 @@ class _SleepSoundSettings extends StatelessWidget {
   }
 }
 
-// Helper category structure
 class _SoundCategory {
   final String titleKey;
   final List<SleepSound> sounds;
