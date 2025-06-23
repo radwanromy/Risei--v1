@@ -7,6 +7,7 @@ import 'screens/tasks_screen.dart';
 import 'screens/sleep_sounds_screen.dart';
 import 'screens/text_to_speech_screen.dart';
 import 'screens/learning_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 // Supported locales
 const List<Locale> supportedLocales = [
@@ -153,8 +154,8 @@ const Map<String, String> languageNames = {
   'zh': '中文',
 };
 
-String getLocaleCode(Locale locale) =>
-    locale.languageCode.toLowerCase();
+
+String getLocaleCode(Locale locale) => locale.languageCode.toLowerCase();
 
 String t(Locale locale, String key) {
   final langCode = getLocaleCode(locale);
@@ -162,6 +163,16 @@ String t(Locale locale, String key) {
       localizedMenu['en']![key] ??
       key;
 }
+
+class MenuEntry {
+  final String key;
+  final IconData icon;
+  final Widget Function() screenBuilder;
+  MenuEntry({required this.key, required this.icon, required this.screenBuilder});
+}
+
+// For saving/loading order
+const String _menuOrderPrefsKey = 'main_menu_order_v1';
 
 class MainNavigation extends StatefulWidget {
   final ThemeMode themeMode;
@@ -191,50 +202,161 @@ class MainNavigation extends StatefulWidget {
 
 class _MainNavigationState extends State<MainNavigation> {
   int _currentIndex = 0;
-  late List<Widget> _screens;
+  late List<MenuEntry> _menuEntries;
+  bool _loadingMenuOrder = true;
+
+  // Default order
+  List<MenuEntry> _defaultMenuEntries() => [
+        MenuEntry(
+          key: 'tasks',
+          icon: Icons.task,
+          screenBuilder: () => TasksScreen(
+            themeMode: widget.themeMode,
+            onThemeModeChanged: widget.onThemeModeChanged,
+            primarySwatch: widget.primarySwatch,
+            onSwatchChanged: widget.onSwatchChanged,
+            locale: widget.locale,
+            onLocaleChanged: widget.onLocaleChanged,
+            riseiTheme: widget.riseiTheme,
+          ),
+        ),
+        MenuEntry(
+          key: 'learning',
+          icon: Icons.school,
+          screenBuilder: () => LearningScreen(riseiTheme: widget.riseiTheme),
+        ),
+        MenuEntry(
+          key: 'wellbeing',
+          icon: Icons.self_improvement,
+          screenBuilder: () => const WellbeingScreen(),
+        ),
+        MenuEntry(
+          key: 'jokes',
+          icon: Icons.emoji_emotions,
+          screenBuilder: () => const JokeScreen(),
+        ),
+        MenuEntry(
+          key: 'sleep',
+          icon: Icons.music_note,
+          screenBuilder: () => SleepSoundsScreen(
+            riseiTheme: widget.riseiTheme,
+            locale: widget.locale,
+          ),
+        ),
+        MenuEntry(
+          key: 'tts',
+          icon: Icons.record_voice_over,
+          screenBuilder: () => TextToSpeechScreen(
+            riseiTheme: widget.riseiTheme,
+            locale: widget.locale,
+          ),
+        ),
+      ];
+
+  // For menu key lookup
+  late Map<String, MenuEntry> _entryMap;
 
   @override
   void initState() {
     super.initState();
-    _screens = [
-      TasksScreen(
-        themeMode: widget.themeMode,
-        onThemeModeChanged: widget.onThemeModeChanged,
-        primarySwatch: widget.primarySwatch,
-        onSwatchChanged: widget.onSwatchChanged,
-        locale: widget.locale,
-        onLocaleChanged: widget.onLocaleChanged,
-        riseiTheme: widget.riseiTheme,
-      ),
-      LearningScreen(riseiTheme: widget.riseiTheme), // Pass riseiTheme here!
-      const WellbeingScreen(),
-      const JokeScreen(),
-      SleepSoundsScreen(riseiTheme: widget.riseiTheme, locale: widget.locale),
-      TextToSpeechScreen(riseiTheme: widget.riseiTheme, locale: widget.locale),
-    ];
+    final defaultEntries = _defaultMenuEntries();
+    _entryMap = {for (var entry in defaultEntries) entry.key: entry};
+    _menuEntries = defaultEntries;
+    _loadMenuOrder();
   }
 
-  @override
-  void didUpdateWidget(covariant MainNavigation oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    _screens[0] = TasksScreen(
-      themeMode: widget.themeMode,
-      onThemeModeChanged: widget.onThemeModeChanged,
-      primarySwatch: widget.primarySwatch,
-      onSwatchChanged: widget.onSwatchChanged,
-      locale: widget.locale,
-      onLocaleChanged: widget.onLocaleChanged,
-      riseiTheme: widget.riseiTheme,
+  void _loadMenuOrder() async {
+    final prefs = await SharedPreferences.getInstance();
+    final savedOrder = prefs.getStringList(_menuOrderPrefsKey);
+    if (savedOrder != null && savedOrder.isNotEmpty) {
+      // Only keep entries that are present in the current version
+      final entries = [
+        for (final key in savedOrder)
+          if (_entryMap.containsKey(key)) _entryMap[key]!
+      ];
+      // Add any missing new entries at the end
+      final missing = _entryMap.keys.where((k) => !savedOrder.contains(k));
+      for (final k in missing) {
+        entries.add(_entryMap[k]!);
+      }
+      setState(() {
+        _menuEntries = entries;
+        _loadingMenuOrder = false;
+      });
+    } else {
+      setState(() {
+        _menuEntries = _defaultMenuEntries();
+        _loadingMenuOrder = false;
+      });
+    }
+  }
+
+  // Save order to prefs
+  void _saveMenuOrder() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList(
+        _menuOrderPrefsKey, _menuEntries.map((e) => e.key).toList());
+  }
+
+  void _showReorderMenuDialog() async {
+    List<MenuEntry> tempOrder = List.from(_menuEntries);
+
+    await showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Reorder Menu'),
+        content: SizedBox(
+          width: double.maxFinite,
+          height: 400,
+          child: ReorderableListView(
+            onReorder: (oldIndex, newIndex) {
+              if (newIndex > oldIndex) newIndex -= 1;
+              final item = tempOrder.removeAt(oldIndex);
+              tempOrder.insert(newIndex, item);
+            },
+            children: [
+              for (final entry in tempOrder)
+                ListTile(
+                  key: ValueKey(entry.key),
+                  leading: Icon(entry.icon),
+                  title: Text(t(widget.locale, entry.key)),
+                  trailing: const Icon(Icons.drag_handle),
+                ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context); // cancel
+            },
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              setState(() {
+                _menuEntries = List.from(tempOrder);
+                if (_currentIndex >= _menuEntries.length) _currentIndex = 0;
+              });
+              _saveMenuOrder();
+              Navigator.pop(context);
+            },
+            child: const Text('Save'),
+          ),
+        ],
+      ),
     );
-    _screens[1] = LearningScreen(riseiTheme: widget.riseiTheme); // update here too!
-    _screens[4] = SleepSoundsScreen(riseiTheme: widget.riseiTheme, locale: widget.locale);
-    _screens[5] = TextToSpeechScreen(riseiTheme: widget.riseiTheme, locale: widget.locale);
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = widget.riseiTheme;
     final locale = widget.locale;
+    if (_loadingMenuOrder) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    final currentMenu = _menuEntries[_currentIndex];
 
     return Container(
       decoration: BoxDecoration(
@@ -244,14 +366,7 @@ class _MainNavigationState extends State<MainNavigation> {
         backgroundColor: Colors.transparent,
         appBar: AppBar(
           title: Text(
-            [
-              t(locale, 'tasks'),
-              t(locale, 'learning'),
-              t(locale, 'wellbeing'),
-              t(locale, 'jokes'),
-              t(locale, 'sleep'),
-              t(locale, 'tts'),
-            ][_currentIndex],
+            t(locale, currentMenu.key),
             style: TextStyle(
               color: theme.textWhite,
               fontWeight: FontWeight.bold,
@@ -273,6 +388,11 @@ class _MainNavigationState extends State<MainNavigation> {
                   widget.themeMode == ThemeMode.dark ? ThemeMode.light : ThemeMode.dark,
                 );
               },
+            ),
+            IconButton(
+              icon: const Icon(Icons.menu),
+              tooltip: 'Reorder Menu',
+              onPressed: _showReorderMenuDialog,
             ),
             PopupMenuButton<RiseiTheme>(
               icon: Icon(Icons.palette, color: theme.accentYellow),
@@ -329,68 +449,24 @@ class _MainNavigationState extends State<MainNavigation> {
             children: [
               DrawerHeader(
                 child: Text(
-                  t(locale, 'tasks'),
+                  t(locale, _menuEntries[0].key),
                   style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
                 ),
               ),
-              ListTile(
-                leading: const Icon(Icons.task),
-                title: Text(t(locale, 'tasks')),
-                selected: _currentIndex == 0,
-                onTap: () {
-                  setState(() => _currentIndex = 0);
-                  Navigator.pop(context);
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.school),
-                title: Text(t(locale, 'learning')),
-                selected: _currentIndex == 1,
-                onTap: () {
-                  setState(() => _currentIndex = 1);
-                  Navigator.pop(context);
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.self_improvement),
-                title: Text(t(locale, 'wellbeing')),
-                selected: _currentIndex == 2,
-                onTap: () {
-                  setState(() => _currentIndex = 2);
-                  Navigator.pop(context);
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.emoji_emotions),
-                title: Text(t(locale, 'jokes')),
-                selected: _currentIndex == 3,
-                onTap: () {
-                  setState(() => _currentIndex = 3);
-                  Navigator.pop(context);
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.music_note),
-                title: Text(t(locale, 'sleep')),
-                selected: _currentIndex == 4,
-                onTap: () {
-                  setState(() => _currentIndex = 4);
-                  Navigator.pop(context);
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.record_voice_over),
-                title: Text(t(locale, 'tts')), // Text to Speech, localized
-                selected: _currentIndex == 5,
-                onTap: () {
-                  setState(() => _currentIndex = 5);
-                  Navigator.pop(context);
-                },
-              ),
+              for (int i = 0; i < _menuEntries.length; i++)
+                ListTile(
+                  leading: Icon(_menuEntries[i].icon),
+                  title: Text(t(locale, _menuEntries[i].key)),
+                  selected: _currentIndex == i,
+                  onTap: () {
+                    setState(() => _currentIndex = i);
+                    Navigator.pop(context);
+                  },
+                ),
             ],
           ),
         ),
-        body: _screens[_currentIndex],
+        body: _menuEntries[_currentIndex].screenBuilder(),
         bottomNavigationBar: BottomNavigationBar(
           backgroundColor: Colors.transparent,
           selectedItemColor: theme.accentYellow,
@@ -401,14 +477,12 @@ class _MainNavigationState extends State<MainNavigation> {
               _currentIndex = index;
             });
           },
-          items: [
-            BottomNavigationBarItem(icon: const Icon(Icons.task), label: t(locale, 'tasks')),
-            BottomNavigationBarItem(icon: const Icon(Icons.school), label: t(locale, 'learning')),
-            BottomNavigationBarItem(icon: const Icon(Icons.self_improvement), label: t(locale, 'wellbeing')),
-            BottomNavigationBarItem(icon: const Icon(Icons.emoji_emotions), label: t(locale, 'jokes')),
-            BottomNavigationBarItem(icon: const Icon(Icons.music_note), label: t(locale, 'sleep')),
-            BottomNavigationBarItem(icon: const Icon(Icons.record_voice_over), label: t(locale, 'tts')),
-          ],
+          items: _menuEntries
+              .map((entry) => BottomNavigationBarItem(
+                    icon: Icon(entry.icon),
+                    label: t(locale, entry.key),
+                  ))
+              .toList(),
           type: BottomNavigationBarType.fixed,
         ),
       ),
